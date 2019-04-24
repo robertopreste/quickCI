@@ -1,10 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # Created by Roberto Preste
+import asyncio
+import aiohttp
 import json
 import os
 import requests
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
+
+
+async def get_async(host: str,
+                    headers: Dict[str, Any],
+                    reponame: str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(host, headers=headers) as resp:
+            response = await resp.json()
+            return reponame, response
 
 
 class TravisCI:
@@ -19,6 +30,10 @@ class TravisCI:
         """
         self.token = token
         self._url = "https://api.travis-ci.com"
+
+    @property
+    def colours(self):
+        return {"passed": "green", "failed": "red", "errored": "red"}
 
     @property
     def headers(self):
@@ -41,14 +56,26 @@ class TravisCI:
         return [(el["name"], el["id"]) for el in q.json().get("repositories")]
 
     def status(self):
-        res = []
-        for el in self.repos_ids():
-            q = requests.get(self._url
-                             + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
-                             headers=self.headers)
-            state = q.json().get("builds")[0].get("state")
-            res.append((el[0], state))
-        return res
+        loop = asyncio.get_event_loop()
+        tasks = [get_async(
+            self._url + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
+            headers=self.headers,
+            reponame=el[0])
+            for el in self.repos_ids()
+        ]
+        res = loop.run_until_complete(asyncio.gather(*tasks))
+
+        return [(el[0], el[1].get("builds")[0].get("state")) for el in res]
+
+
+        # res = []
+        # for el in self.repos_ids():
+        #     q = requests.get(self._url
+        #                      + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
+        #                      headers=self.headers)
+        #     state = q.json().get("builds")[0].get("state")
+        #     res.append((el[0], state))
+        # return res
 
 
 class CircleCI:
@@ -63,6 +90,10 @@ class CircleCI:
         """
         self.token = token
         self._url = "https://circleci.com/api/v1.1"
+
+    @property
+    def colours(self):
+        return {"success": "green", "running": "yellow", "failed": "red"}
 
     @property
     def headers(self):
@@ -109,6 +140,7 @@ class AppVeyor:
 class Codeship:
     """
     TODO: Class used to get and manipulate data from the Codeship platform.
+    Token expires after an hour. 
     """
 
     def __init__(self, token: str):
@@ -121,12 +153,13 @@ class Codeship:
 
     @property
     def headers(self):
-        return {"Authentication": self.token}
+        return {"Authentication": "Bearer {}".format(self.token)}
 
 
 class ReadTheDocs:
     """
     TODO: Class used to get and manipulate data from the ReadTheDocs platform.
+    Not possible to retrieve projects belonging to a specific user.
     """
 
     def __init__(self, token: str):
@@ -201,7 +234,3 @@ class Config:
         if self.check_file(self.config_path):
             with open(self.config_path) as f:
                 return json.loads(f.read())
-
-
-
-

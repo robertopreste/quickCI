@@ -61,18 +61,12 @@ def status(travis, circle, appveyor, codeship, readthedocs):
     # click.echo(t.get_builds())
     # click.echo(c.get_user_info())
     # click.echo(c.projects())
-    fg_cols_circle = {"success": "green",
-                      "running": "yellow",
-                      "failed": "red"}
-    fg_cols_travis = {"passed": "green",
-                      "failed": "red",
-                      "errored": "red"}
     click.secho("CircleCI", bold=True, fg="blue")
     for el in c.status():
-        click.secho("\t{} -> {}".format(el[0], el[1]), fg=fg_cols_circle[el[1]])
+        click.secho("\t{} -> {}".format(el[0], el[1]), fg=c.colours[el[1]])
     click.secho("Travis CI", bold=True, fg="blue")
     for el in t.status():
-        click.secho("\t{} -> {}".format(el[0], el[1]), fg=fg_cols_travis[el[1]])
+        click.secho("\t{} -> {}".format(el[0], el[1]), fg=t.colours[el[1]])
 
     return 0
 
