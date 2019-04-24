@@ -213,7 +213,7 @@ class Config:
         """
         return os.path.isfile(config_file)
 
-    def create_config(self):
+    def create(self):
         """
         Create the config file in the default config dir.
         :return:
@@ -226,11 +226,13 @@ class Config:
 
         return
 
-    def parse_config(self):
+    def parse(self):
         """
         Parse the config file, if present.
         :return:
         """
         if self.check_file(self.config_path):
             with open(self.config_path) as f:
-                return json.loads(f.read())
+                res = json.loads(f.read())
+                self.content = repr(res)
+                return res

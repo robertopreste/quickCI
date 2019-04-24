@@ -20,7 +20,7 @@ def config():
     """
     c = Config()
     click.echo("Creating config file in {}...".format(c.config_path))
-    c.create_config()
+    c.create()
     click.echo("Done. Please replace temp tokens as needed.")
 
     return 0
@@ -36,7 +36,7 @@ def status(travis, circle, appveyor, codeship, readthedocs):
     """
     Return the status of the master branch of each project in each CI.
     """
-    conf_tokens = Config().parse_config()
+    conf_tokens = Config().parse()
     if travis:
         t = TravisCI(token=travis)
     else:
