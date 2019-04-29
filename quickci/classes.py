@@ -3,6 +3,7 @@
 # Created by Roberto Preste
 import asyncio
 import aiohttp
+import pprint
 import json
 import os
 import requests
@@ -21,41 +22,64 @@ async def get_async(host: str,
 class TravisCI:
     """
     Class used to get and manipulate data from the TravisCI platform.
+
+    :param str token: authentication token provided by Travis CI
     """
 
     def __init__(self, token: str):
-        """
-
-        :param str token: authentication token provided by Travis CI
-        """
         self.token = token
         self._url = "https://api.travis-ci.com"
 
     @property
-    def colours(self):
+    def colours(self) -> Dict[str, str]:
+        """Return colours indicating build status.
+
+        :return: Dict[str,str]
+        """
         return {"passed": "green", "failed": "red", "errored": "red"}
 
     @property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
         return {"Travis-API-Version": "3",
                 "User-Agent": "CI-Board",
                 "Authorization": "token {}".format(self.token)}
 
-    def user_info(self):
+    def user_info(self) -> Dict[str, Any]:
+        """Return user information from the API.
+
+        :return: Dict[str,Any]
+        """
         q = requests.get(self._url + "/user", headers=self.headers)
         return q.json()
 
-    def builds(self):
+    def builds(self) -> Dict[str, Any]:
+        """Return builds information from the API.
+
+        :return: Dict[str,Any]
+        """
         q = requests.get(self._url + "/builds", headers=self.headers)
         return q.json()
 
-    def repos_ids(self):
+    def repos_ids(self) -> List[Tuple[str, str]]:
+        """Return name and id for each repo available.
+
+        :return: List[Tuple[str,str]]
+        """
         login = self.user_info().get("login")
         q = requests.get(self._url + "/owner/{}/repos?repository.active=True".format(login),
                          headers=self.headers)
         return [(el["name"], el["id"]) for el in q.json().get("repositories")]
 
-    def status(self):
+    def status(self) -> List[Tuple[str, str]]:
+        """Return name and build status for each repo available (master
+        branch only).
+
+        :return: List[Tuple[str,str]]
+        """
         loop = asyncio.get_event_loop()
         tasks = [get_async(
             self._url + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
@@ -81,41 +105,56 @@ class TravisCI:
 class CircleCI:
     """
     Class used to get and manipulate data from the CircleCI platform.
+
+    :param str token: authentication token provided by CircleCI
     """
 
     def __init__(self, token: str):
-        """
-
-        :param str token: authentication token provided by CircleCI
-        """
         self.token = token
         self._url = "https://circleci.com/api/v1.1"
 
     @property
-    def colours(self):
+    def colours(self) -> Dict[str, str]:
+        """Return colours indicating build status.
+
+        :return: Dict[str,str]
+        """
         return {"success": "green", "running": "yellow", "failed": "red"}
 
     @property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
         return {"circle-token": self.token}
 
-    def user_info(self):
+    def user_info(self) -> Dict[str, Any]:
+        """Return user information from the API.
+
+        :return: Dict[str,Any]
+        """
         q = requests.get(self._url + "/me?", headers=self.headers)
         return q.json()
 
-    def projects(self):
+    def projects(self) -> List[Dict[str, Any]]:
+        """Return projects information from the API.
+
+        :return: List[Dict[str,Any]]
+        """
         q = requests.get(self._url + "/projects?", headers=self.headers)
         return q.json()
 
     def status(self) -> List[Tuple[str, str]]:
-        """
-        Return the status of each project present on CircleCI (master
-        branch only).
-        :return: List[Tuple[str, str]]
+        """Return name and build status for each project available
+        (master branch only).
+
+        :return: List[Tuple[str,str]]
         """
         resp = self.projects()
-        return [(repo["reponame"],
-                repo["branches"]["master"]["latest_workflows"]["workflow"]["status"])
+        return [(repo.get("reponame"),
+                 (repo.get("branches").get("master").get("latest_workflows")
+                  .get("workflow").get("status")))
                 for repo in resp]
 
 
@@ -179,60 +218,96 @@ class Config:
     """
     Class that controls the config file used to store and retrieve tokens.
     """
-
-    def __init__(self):
-        self.config_dir = os.path.expanduser("~/.config/quickci")
-        self.config_file = "tokens.json"
-        self.content = """{
+    DEFAULT_CONFIG = """
+{
     "TRAVISCI_TOKEN": "replace_me", 
     "CIRCLECI_TOKEN": "replace_me", 
     "APPVEYOR_TOKEN": "replace_me", 
     "CODESHIP_TOKEN": "replace_me", 
     "RTD_TOKEN": "replace_me"
-}"""
+}
+"""
+
+    def __init__(self):
+        self._config_dir = os.path.expanduser("~/.config/quickci")
+        self._config_file = "tokens.json"
+        self._content = self.parse()
 
     @property
     def config_path(self):
-        return os.path.join(self.config_dir, self.config_file)
-
-    @staticmethod
-    def check_dir(config_dir: str) -> bool:
-        """
-        Check whether the config dir exists or not.
-        :param str config_dir: config dir to check
-        :return: bool
-        """
-        return os.path.isdir(config_dir)
-
-    @staticmethod
-    def check_file(config_file: str) -> bool:
-        """
-        Check whether the config file exists or not.
-        :param str config_file: config file to check
-        :return: bool
-        """
-        return os.path.isfile(config_file)
-
-    def create(self):
-        """
-        Create the config file in the default config dir.
-        :return:
-        """
-        # TODO: check existence of config dir and file first
-        if not self.check_dir(self.config_dir):
-            os.makedirs(self.config_dir)
-        with open(self.config_path, "w") as f:
-            f.write(self.content)
-
-        return
+        return os.path.join(self._config_dir, self._config_file)
 
     def parse(self):
-        """
-        Parse the config file, if present.
-        :return:
-        """
-        if self.check_file(self.config_path):
+        try:
             with open(self.config_path) as f:
                 res = json.loads(f.read())
-                self.content = repr(res)
-                return res
+        except FileNotFoundError:
+            res = json.loads(self.DEFAULT_CONFIG)
+        return res
+
+    @property
+    def content(self):
+        return self._content
+
+    @content.setter
+    def content(self, value):
+        self._content = value
+
+    def check_dir(self) -> bool:
+        """
+        Check whether the config dir exists or not.
+
+        :return: bool
+        """
+        return os.path.isdir(self._config_dir)
+
+    def check_file(self) -> bool:
+        """
+        Check whether the config file exists or not.
+
+        :return: bool
+        """
+        return os.path.isfile(self.config_path)
+
+    def create(self) -> bool:
+        """Create the config file in the default config dir.
+
+        :return: bool
+        """
+        if not self.check_dir():
+            os.makedirs(self._config_dir)
+        with open(self.config_path, "w") as f:
+            f.write(self.DEFAULT_CONFIG)
+
+        return True
+
+    def update(self, service: str, token: str):
+        """Update a given service token with a new one.
+
+        :param str service: service name
+
+        :param str token: new token
+
+        :return:
+        """
+        self.content[service] = token
+
+    def save(self) -> bool:
+        """Write the updated config to the default path.
+
+        :return: bool
+        """
+        with open(self.config_path, "w") as f:
+            f.write(json.dumps(self.content))
+
+        return True
+
+    def show(self):
+        """Return a screen-friendly representation of the config.
+
+        :return:
+        """
+        return pprint.pprint(self.content)
+
+    def __getitem__(self, item):
+        return self.content[item]
