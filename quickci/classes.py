@@ -36,7 +36,8 @@ class TravisCI:
 
         :return: Dict[str,str]
         """
-        return {"passed": "green", "failed": "red", "errored": "red"}
+        return {"passed": "green", "failed": "red", "errored": "red",
+                "started": "yellow"}
 
     @property
     def headers(self) -> Dict[str, str]:
