@@ -12,3 +12,10 @@ History
 
 * Update Config methods and attributes for better handling of tokens;
 * Update CLI commands.
+
+0.1.2 (2019-06-03)
+==================
+
+* Minor code fix;
+* Update requirements and documentation;
+* Fix AppVeyor request class and add GitLab draft.

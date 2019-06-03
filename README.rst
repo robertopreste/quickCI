@@ -50,7 +50,64 @@ Have a quick look at the status of CI projects from the command line.
 Features
 --------
 
-* TODO
+Currently ``quickci`` supports checking build status for the following CI services:
+
+* `Travis CI`_
+* CircleCI_
+* AppVeyor_
+
+TODO:
+
+* GitLab
+* CodeShip
+
+Usage
+-----
+
+Configuration
+=============
+
+1. Create a config file (it will be located in ``~/.config/quickci/tokens.json``::
+
+    $ quickci config --create
+
+2. Replace placeholders with your own authentication tokens::
+
+    $ quickci config --update <token_key> <token_value>
+
+Available keys are:
+    * Travis CI: ``TRAVISCI_TOKEN``
+    * CircleCI: ``CIRCLECI_TOKEN``
+    * AppVeyor: ``APPVEYOR_TOKEN``
+    * GitLab: ``GITLABCI_TOKEN`` and ``GITLABCI_USER``
+    * CodeShip: ``CODESHIP_TOKEN``
+
+3. Check that everything is correct::
+
+    $ quickci config --show
+
+Build status
+============
+
+Check the build status of your projects::
+
+    $ quickci status
+
+The build status of your Travis CI, CircleCI and AppVeyor projects will be returned (currently only master branch).
+
+It is also possible to check a specific service without saving the auth token in ``~/.config/quickci/tokens.json``, using specific options of ``quickci status``::
+
+    $ quickci status --travis <Travis CItoken>
+    $ quickci status --circle <CircleCI token>
+    $ quickci status --appveyor <AppVeyor token>
+
+Installation
+------------
+
+``quickci`` can be installed using pip::
+
+    $ pip install quickci
+
 
 Credits
 -------
@@ -59,3 +116,6 @@ This package was created with Cookiecutter_ and the `cc-pypackage`_ project temp
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`cc-pypackage`: https://github.com/robertopreste/cc-pypackage
+.. _`Travis CI`: https://travis-ci.com/
+.. _CircleCI: https://circleci.com/
+.. _AppVeyor: https://www.appveyor.com/
