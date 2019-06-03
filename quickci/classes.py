@@ -47,7 +47,7 @@ class TravisCI:
         """
         return {"Travis-API-Version": "3",
                 "User-Agent": "CI-Board",
-                "Authorization": "token {}".format(self.token)}
+                "Authorization": f"token {self.token}"}
 
     def user_info(self) -> Dict[str, Any]:
         """Return user information from the API.
@@ -71,7 +71,8 @@ class TravisCI:
         :return: List[Tuple[str,str]]
         """
         login = self.user_info().get("login")
-        q = requests.get(self._url + "/owner/{}/repos?repository.active=True".format(login),
+        q = requests.get(self._url +
+                         f"/owner/{login}/repos?repository.active=True",
                          headers=self.headers)
         return [(el["name"], el["id"]) for el in q.json().get("repositories")]
 
@@ -82,12 +83,10 @@ class TravisCI:
         :return: List[Tuple[str,str]]
         """
         loop = asyncio.get_event_loop()
-        tasks = [get_async(
-            self._url + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
-            headers=self.headers,
-            reponame=el[0])
-            for el in self.repos_ids()
-        ]
+        tasks = [get_async(self._url +
+                           f"/repo/{el[1]}/builds?branch.name=master&sort_by=id:desc",
+                           headers=self.headers, reponame=el[0])
+                 for el in self.repos_ids()]
         res = loop.run_until_complete(asyncio.gather(*tasks))
 
         return [(el[0], el[1].get("builds")[0].get("state")) for el in res]
@@ -173,8 +172,96 @@ class AppVeyor:
         self._url = "https://ci.appveyor.com/api"
 
     @property
-    def headers(self):
-        return {"Authentication": "Bearer {}".format(self.token)}
+    def colours(self) -> Dict[str, str]:
+        """Return colours indicating build status.
+
+        :return: Dict[str,str]
+        """
+        return {"success": "green", "running": "yellow", "failed": "red"}
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
+        return {"Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json"}
+
+    def projects(self) -> List[Dict[str, Any]]:
+        """Return projects information from the API.
+
+        :return: List[Dict[str,Any]]
+        """
+        q = requests.get(self._url + "/projects", headers=self.headers)
+        return q.json()
+
+    def status(self) -> List[Tuple[str, str]]:
+        """Return name and build status for each project available
+        (master branch only).
+
+        :return: List[Tuple[str,str]]
+        """
+        resp = self.projects()
+        account = resp[0].get("accountName")
+        loop = asyncio.get_event_loop()
+        tasks = [get_async(self._url +
+                           f"/projects/{account}/{el.get('slug')}/branch/master",
+                           headers=self.headers, reponame=el.get("slug"))
+                 for el in resp]
+        res = loop.run_until_complete(asyncio.gather(*tasks))
+
+        return [(el[0], el[1].get("build").get("status")) for el in res]
+
+
+class GitLab:
+    """
+    TODO: Class used to get and manipulate data from the GitLab platform.
+    """
+
+    def __init__(self, token: str, username: str):
+        """
+
+        :param str token: authentication token provided by GitLab
+        :param str username: username of the GitLab user
+        """
+        self.token = token
+        self.username = username
+        self._url = "https://gitlab.com/api/v4"
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
+        return {"Private-Token": self.token}
+
+    def projects(self) -> List[Dict[str, Any]]:
+        """Return projects information from the API.
+
+        :return: List[Dict[str,Any]]
+        """
+        q = requests.get(self._url + f"/users/{self.username}/projects",
+                         headers=self.headers)
+        return q.json()
+
+    def repos_ids(self) -> List[Tuple[str, str]]:
+        """Return name and id for each repo available.
+
+        :return: List[Tuple[str,str]]
+        """
+        projs = self.projects()
+        return [(el["name"], el["id"]) for el in projs]
+
+
+    def status(self) -> List[Tuple[str, str]]:
+        """Return name and build status for each project available
+        (master branch only).
+
+        :return: List[Tuple[str,str]]
+        """
+        pass
 
 
 class Codeship:
@@ -193,26 +280,7 @@ class Codeship:
 
     @property
     def headers(self):
-        return {"Authentication": "Bearer {}".format(self.token)}
-
-
-class ReadTheDocs:
-    """
-    TODO: Class used to get and manipulate data from the ReadTheDocs platform.
-    Not possible to retrieve projects belonging to a specific user.
-    """
-
-    def __init__(self, token: str):
-        """
-
-        :param str token: authentication token provided by ReadTheDocs
-        """
-        self.token = token
-        self._url = "https://readthedocs.org/api/v2"
-
-    @property
-    def headers(self):
-        return {"Authentication": self.token}
+        return {"Authorization": f"Bearer {self.token}"}
 
 
 class Config:
@@ -225,7 +293,8 @@ class Config:
     "CIRCLECI_TOKEN": "replace_me", 
     "APPVEYOR_TOKEN": "replace_me", 
     "CODESHIP_TOKEN": "replace_me", 
-    "RTD_TOKEN": "replace_me"
+    "GITLABCI_TOKEN": "replace_me",
+    "GITLABCI_USER": "replace_me"
 }
 """
 
