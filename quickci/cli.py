@@ -4,7 +4,7 @@
 import sys
 import click
 from quickci.classes import Config, TravisCI, CircleCI, AppVeyor, GitLab, \
-    Codeship, ReadTheDocs
+    Codeship, Buddy
 
 
 @click.group()
@@ -50,10 +50,11 @@ def config(show, update, create):
 @click.option("--travis", "-t", help="""TravisCI auth token""")
 @click.option("--circle", "-c", help="""CircleCI auth token""")
 @click.option("--appveyor", "-a", help="""AppVeyor auth token""")
+@click.option("--buddy", "-b", help="""Buddy auth token""")
 @click.option("--gitlab", "-g", nargs=2, type=str,
               help="""GitLab auth token and username""")
 @click.option("--codeship", "-s", help="""Codeship auth token""")
-def status(travis, circle, appveyor, gitlab, codeship):
+def status(travis, circle, appveyor, buddy, gitlab, codeship):
     """
     Return the status of the master branch of each project in each CI.
     """
@@ -70,6 +71,10 @@ def status(travis, circle, appveyor, gitlab, codeship):
         a = AppVeyor(token=appveyor)
     else:
         a = AppVeyor(token=conf["APPVEYOR_TOKEN"])
+    if buddy:
+        b = Buddy(token=buddy)
+    else:
+        b = Buddy(token=conf["BUDDY_TOKEN"])
     if gitlab:
         g = GitLab(token=gitlab[0], username=gitlab[1])
     else:
@@ -89,6 +94,10 @@ def status(travis, circle, appveyor, gitlab, codeship):
     click.secho("AppVeyor", bold=True, fg="blue")
     for el in a.status():
         click.secho(f"\t{el[0]} -> {el[1]}", fg=a.colours[el[1]])
+    click.secho("Buddy", bold=True, fg="blue")
+    for el in b.status():
+        click.secho(f"\t{el[0]} ({el[1]} pipeline) -> {el[2]}",
+                    fg=b.colours[el[2]])
 
     return 0
 

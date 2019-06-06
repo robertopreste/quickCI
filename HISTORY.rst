@@ -19,3 +19,8 @@ History
 * Minor code fix;
 * Update requirements and documentation;
 * Fix AppVeyor request class and add GitLab draft.
+
+0.1.3 (2019-06-06)
+==================
+
+* Add Buddy class.

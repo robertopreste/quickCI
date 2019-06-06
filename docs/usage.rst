@@ -29,7 +29,7 @@ If issued as ``quickci status``, will retrieve these information for all the CI 
 
 If you have not set up a config file, you can still retrieve information from CI services providing their authentication token right into the command::
 
-    $ quickci status --travis <TRAVIS_CI_TOKEN> --circle <CIRCLE_CI_TOKEN> --codeship <CODESHIP_TOKEN>
+    $ quickci status --travis <TRAVIS_CI_TOKEN> --circle <CIRCLE_CI_TOKEN> --appveyor <APPVEYOR_TOKEN> --buddy <BUDDY_TOKEN>
 
 
 ``quickci config``

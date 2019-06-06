@@ -92,16 +92,6 @@ class TravisCI:
         return [(el[0], el[1].get("builds")[0].get("state")) for el in res]
 
 
-        # res = []
-        # for el in self.repos_ids():
-        #     q = requests.get(self._url
-        #                      + "/repo/{}/builds?branch.name=master&sort_by=id:desc".format(el[1]),
-        #                      headers=self.headers)
-        #     state = q.json().get("builds")[0].get("state")
-        #     res.append((el[0], state))
-        # return res
-
-
 class CircleCI:
     """
     Class used to get and manipulate data from the CircleCI platform.
@@ -160,14 +150,12 @@ class CircleCI:
 
 class AppVeyor:
     """
-    TODO: Class used to get and manipulate data from the AppVeyor platform.
+    Class used to get and manipulate data from the AppVeyor platform.
+
+    :param str token: authentication token provided by AppVeyor
     """
 
     def __init__(self, token: str):
-        """
-
-        :param str token: authentication token provided by AppVeyor
-        """
         self.token = token
         self._url = "https://ci.appveyor.com/api"
 
@@ -214,17 +202,81 @@ class AppVeyor:
         return [(el[0], el[1].get("build").get("status")) for el in res]
 
 
+class Buddy:
+    """
+    Class used to get and manipulate data from the Buddy platform.
+
+    :param token: authentication token provided by Buddy
+    """
+
+    def __init__(self, token: str):
+        self.token = token
+        self._url = "https://api.buddy.works"
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
+        return {"Authorization": f"Bearer {self.token}"}
+
+    @property
+    def colours(self) -> Dict[str, str]:
+        """Return colours indicating build status.
+
+        :return: Dict[str,str]
+        """
+        return {"SUCCESSFUL": "green", "INPROGRESS": "yellow", "FAILED": "red"}
+
+    def workspaces(self) -> List[Tuple[str, str]]:
+        """Return user's workspaces from the API.
+
+        :return: List[Tuple[str,str]]
+        """
+        q = requests.get(self._url + "/workspaces", headers=self.headers)
+        wspaces = q.json()
+
+        return [(el["domain"], el["url"]) for el in wspaces["workspaces"]]
+
+    def projects(self) -> List[Tuple[str, str]]:
+        """Return user's projects for each workspace from the API.
+
+        :return: List[Tuple[str,str]]
+        """
+        projs = []
+        wspaces = self.workspaces()
+        for tup in wspaces:
+            r = requests.get(tup[1] + "/projects", headers=self.headers)
+            for el in r.json()["projects"]:
+                projs.append((el["name"], el["url"]))
+
+        return projs
+
+    def status(self) -> List[Tuple[str, str, str]]:
+        """Return project name, pipeline name and status from the API.
+
+        :return: List[Tuple[str,str,str]]
+        """
+        projs = self.projects()
+        st = []
+        for el in projs:
+            r = requests.get(el[1] + "/pipelines", headers=self.headers)
+            for pip in r.json()["pipelines"]:
+                st.append((el[0], pip["name"], pip["last_execution_status"]))
+
+        return st
+
+
 class GitLab:
     """
     TODO: Class used to get and manipulate data from the GitLab platform.
+
+    :param str token: authentication token provided by GitLab
+    :param str username: username of the GitLab user
     """
 
     def __init__(self, token: str, username: str):
-        """
-
-        :param str token: authentication token provided by GitLab
-        :param str username: username of the GitLab user
-        """
         self.token = token
         self.username = username
         self._url = "https://gitlab.com/api/v4"
@@ -253,7 +305,6 @@ class GitLab:
         """
         projs = self.projects()
         return [(el["name"], el["id"]) for el in projs]
-
 
     def status(self) -> List[Tuple[str, str]]:
         """Return name and build status for each project available
@@ -292,6 +343,7 @@ class Config:
     "TRAVISCI_TOKEN": "replace_me", 
     "CIRCLECI_TOKEN": "replace_me", 
     "APPVEYOR_TOKEN": "replace_me", 
+    "BUDDY_TOKEN": "replace_me",
     "CODESHIP_TOKEN": "replace_me", 
     "GITLABCI_TOKEN": "replace_me",
     "GITLABCI_USER": "replace_me"

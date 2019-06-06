@@ -55,6 +55,7 @@ Currently ``quickci`` supports checking build status for the following CI servic
 * `Travis CI`_
 * CircleCI_
 * AppVeyor_
+* Buddy_
 
 TODO:
 
@@ -79,6 +80,7 @@ Available keys are:
     * Travis CI: ``TRAVISCI_TOKEN``
     * CircleCI: ``CIRCLECI_TOKEN``
     * AppVeyor: ``APPVEYOR_TOKEN``
+    * Buddy: ``BUDDY_TOKEN``
     * GitLab: ``GITLABCI_TOKEN`` and ``GITLABCI_USER``
     * CodeShip: ``CODESHIP_TOKEN``
 
@@ -100,6 +102,7 @@ It is also possible to check a specific service without saving the auth token in
     $ quickci status --travis <Travis CItoken>
     $ quickci status --circle <CircleCI token>
     $ quickci status --appveyor <AppVeyor token>
+    $ quickci status --buddy <Buddy token>
 
 Installation
 ------------
@@ -119,3 +122,4 @@ This package was created with Cookiecutter_ and the `cc-pypackage`_ project temp
 .. _`Travis CI`: https://travis-ci.com/
 .. _CircleCI: https://circleci.com/
 .. _AppVeyor: https://www.appveyor.com/
+.. _Buddy: https://buddy.works
