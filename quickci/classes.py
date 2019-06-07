@@ -12,7 +12,17 @@ from typing import List, Tuple, Dict, Any
 
 async def get_async(host: str,
                     headers: Dict[str, Any],
-                    reponame: str):
+                    reponame: str) -> Tuple[str, Dict[str, Any]]:
+    """Async request call.
+
+    :param str host: url to request
+
+    :param Dict[str,Any] headers: request headers to use
+
+    :param str reponame: identifier returned as first element of the tuple
+
+    :return: Tuple[str,Dict[str,Any]
+    """
     async with aiohttp.ClientSession() as session:
         async with session.get(host, headers=headers) as resp:
             response = await resp.json()
@@ -54,7 +64,7 @@ class TravisCI:
 
         :return: Dict[str,Any]
         """
-        q = requests.get(self._url + "/user", headers=self.headers)
+        q = requests.get(f"{self._url}/user", headers=self.headers)
         return q.json()
 
     def builds(self) -> Dict[str, Any]:
@@ -62,7 +72,7 @@ class TravisCI:
 
         :return: Dict[str,Any]
         """
-        q = requests.get(self._url + "/builds", headers=self.headers)
+        q = requests.get(f"{self._url}/builds", headers=self.headers)
         return q.json()
 
     def repos_ids(self) -> List[Tuple[str, str]]:
@@ -71,8 +81,7 @@ class TravisCI:
         :return: List[Tuple[str,str]]
         """
         login = self.user_info().get("login")
-        q = requests.get(self._url +
-                         f"/owner/{login}/repos?repository.active=True",
+        q = requests.get(f"{self._url}/owner/{login}/repos?repository.active=True",
                          headers=self.headers)
         return [(el["name"], el["id"]) for el in q.json().get("repositories")]
 
@@ -83,8 +92,7 @@ class TravisCI:
         :return: List[Tuple[str,str]]
         """
         loop = asyncio.get_event_loop()
-        tasks = [get_async(self._url +
-                           f"/repo/{el[1]}/builds?branch.name=master&sort_by=id:desc",
+        tasks = [get_async(f"{self._url}/repo/{el[1]}/builds?branch.name=master&sort_by=id:desc",
                            headers=self.headers, reponame=el[0])
                  for el in self.repos_ids()]
         res = loop.run_until_complete(asyncio.gather(*tasks))
@@ -124,7 +132,7 @@ class CircleCI:
 
         :return: Dict[str,Any]
         """
-        q = requests.get(self._url + "/me?", headers=self.headers)
+        q = requests.get(f"{self._url}/me?", headers=self.headers)
         return q.json()
 
     def projects(self) -> List[Dict[str, Any]]:
@@ -132,7 +140,7 @@ class CircleCI:
 
         :return: List[Dict[str,Any]]
         """
-        q = requests.get(self._url + "/projects?", headers=self.headers)
+        q = requests.get(f"{self._url}/projects?", headers=self.headers)
         return q.json()
 
     def status(self) -> List[Tuple[str, str]]:
@@ -181,7 +189,7 @@ class AppVeyor:
 
         :return: List[Dict[str,Any]]
         """
-        q = requests.get(self._url + "/projects", headers=self.headers)
+        q = requests.get(f"{self._url}/projects", headers=self.headers)
         return q.json()
 
     def status(self) -> List[Tuple[str, str]]:
@@ -193,8 +201,7 @@ class AppVeyor:
         resp = self.projects()
         account = resp[0].get("accountName")
         loop = asyncio.get_event_loop()
-        tasks = [get_async(self._url +
-                           f"/projects/{account}/{el.get('slug')}/branch/master",
+        tasks = [get_async(f"{self._url}/projects/{account}/{el.get('slug')}/branch/master",
                            headers=self.headers, reponame=el.get("slug"))
                  for el in resp]
         res = loop.run_until_complete(asyncio.gather(*tasks))
@@ -234,24 +241,30 @@ class Buddy:
 
         :return: List[Tuple[str,str]]
         """
-        q = requests.get(self._url + "/workspaces", headers=self.headers)
+        q = requests.get(f"{self._url}/workspaces", headers=self.headers)
         wspaces = q.json()
 
-        return [(el["domain"], el["url"]) for el in wspaces["workspaces"]]
+        return [(el["domain"], el["url"]) for el in wspaces.get("workspaces")]
 
     def projects(self) -> List[Tuple[str, str]]:
         """Return user's projects for each workspace from the API.
 
         :return: List[Tuple[str,str]]
         """
-        projs = []
         wspaces = self.workspaces()
-        for tup in wspaces:
-            r = requests.get(tup[1] + "/projects", headers=self.headers)
-            for el in r.json()["projects"]:
-                projs.append((el["name"], el["url"]))
+        loop = asyncio.get_event_loop()
+        tasks = [get_async(f"{tup[1]}/projects",
+                           headers=self.headers,
+                           reponame=tup[0]) for tup in wspaces]
+        res = loop.run_until_complete(asyncio.gather(*tasks))
 
-        return projs
+        return [(el.get("name"), el.get("url"))
+                for ws in list(zip(*res))[1] for el in ws["projects"]]
+
+        # for tup in wspaces:
+        #     r = requests.get(f"{tup[1]}/projects", headers=self.headers)
+        #     for el in r.json().get("projects"):
+        #         projs.append((el["name"], el["url"]))
 
     def status(self) -> List[Tuple[str, str, str]]:
         """Return project name, pipeline name and status from the API.
@@ -259,13 +272,22 @@ class Buddy:
         :return: List[Tuple[str,str,str]]
         """
         projs = self.projects()
-        st = []
-        for el in projs:
-            r = requests.get(el[1] + "/pipelines", headers=self.headers)
-            for pip in r.json()["pipelines"]:
-                st.append((el[0], pip["name"], pip["last_execution_status"]))
+        loop = asyncio.get_event_loop()
+        tasks = [get_async(f"{tup[1]}/pipelines",
+                           headers=self.headers,
+                           reponame=tup[0]) for tup in projs]
+        res = loop.run_until_complete(asyncio.gather(*tasks))
 
-        return st
+        return [(pr[0], el.get("name"), el.get("last_execution_status"))
+                for pr in res for el in pr[1].get("pipelines")]
+
+        # st = []
+        # for el in projs:
+        #     r = requests.get(f"{el[1]}/pipelines", headers=self.headers)
+        #     for pip in r.json().get("pipelines"):
+        #         st.append((el[0], pip["name"], pip["last_execution_status"]))
+        #
+        # return st
 
 
 class GitLab:
@@ -294,7 +316,7 @@ class GitLab:
 
         :return: List[Dict[str,Any]]
         """
-        q = requests.get(self._url + f"/users/{self.username}/projects",
+        q = requests.get(f"{self._url}/users/{self.username}/projects",
                          headers=self.headers)
         return q.json()
 
