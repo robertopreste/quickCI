@@ -24,3 +24,8 @@ History
 ==================
 
 * Add Buddy class.
+
+0.1.4 (2019-06-07)
+==================
+
+* Change fetching functions to asyncio.
