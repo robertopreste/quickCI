@@ -234,7 +234,8 @@ class Buddy:
 
         :return: Dict[str,str]
         """
-        return {"SUCCESSFUL": "green", "INPROGRESS": "yellow", "FAILED": "red"}
+        return {"SUCCESSFUL": "green", "INPROGRESS": "yellow", "FAILED": "red",
+                "ENQUEUED": "yellow"}
 
     def workspaces(self) -> List[Tuple[str, str]]:
         """Return user's workspaces from the API.
@@ -371,6 +372,10 @@ class Config:
     "GITLABCI_USER": "replace_me"
 }
 """
+    SERVICES = {"travis": "TRAVISCI_TOKEN",
+                "circle": "CIRCLECI_TOKEN",
+                "appveyor": "APPVEYOR_TOKEN",
+                "buddy": "BUDDY_TOKEN"}
 
     def __init__(self):
         self._config_dir = os.path.expanduser("~/.config/quickci")
@@ -434,7 +439,7 @@ class Config:
 
         :return:
         """
-        self.content[service] = token
+        self.content[self.SERVICES[service]] = token
 
     def save(self) -> bool:
         """Write the updated config to the default path.

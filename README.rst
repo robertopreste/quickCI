@@ -23,7 +23,6 @@ quickCI
         :target: https://quickci.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
 .. image:: https://pyup.io/repos/github/robertopreste/quickci/shield.svg
      :target: https://pyup.io/repos/github/robertopreste/quickci/
      :alt: Updates
@@ -31,8 +30,6 @@ quickCI
 .. image:: https://pyup.io/repos/github/robertopreste/quickci/python-3-shield.svg
      :target: https://pyup.io/repos/github/robertopreste/quickci/
      :alt: Python 3
-
-
 
 .. image:: https://pepy.tech/badge/quickci
     :target: https://pepy.tech/project/quickci
@@ -70,23 +67,21 @@ Configuration
 
 1. Create a config file (it will be located in ``~/.config/quickci/tokens.json``::
 
-    $ quickci config --create
+    $ quickci config create
 
 2. Replace placeholders with your own authentication tokens::
 
-    $ quickci config --update <token_key> <token_value>
+    $ quickci config update <service> <token>
 
-Available keys are:
-    * Travis CI: ``TRAVISCI_TOKEN``
-    * CircleCI: ``CIRCLECI_TOKEN``
-    * AppVeyor: ``APPVEYOR_TOKEN``
-    * Buddy: ``BUDDY_TOKEN``
-    * GitLab: ``GITLABCI_TOKEN`` and ``GITLABCI_USER``
-    * CodeShip: ``CODESHIP_TOKEN``
+Available services are:
+    * Travis CI: ``travis``
+    * CircleCI: ``circle``
+    * AppVeyor: ``appveyor``
+    * Buddy: ``buddy``
 
 3. Check that everything is correct::
 
-    $ quickci config --show
+    $ quickci config show
 
 Build status
 ============
@@ -95,14 +90,18 @@ Check the build status of your projects::
 
     $ quickci status
 
-The build status of your Travis CI, CircleCI and AppVeyor projects will be returned (currently only master branch).
+The build status of your Travis CI, CircleCI, AppVeyor and Buddy projects will be returned (currently only master branch).
 
-It is also possible to check a specific service without saving the auth token in ``~/.config/quickci/tokens.json``, using specific options of ``quickci status``::
+It is also possible to check a specific service using subcommands of ``quickci status``::
 
-    $ quickci status --travis <Travis CItoken>
-    $ quickci status --circle <CircleCI token>
-    $ quickci status --appveyor <AppVeyor token>
-    $ quickci status --buddy <Buddy token>
+    $ quickci status travis
+    $ quickci status circle
+    $ quickci status appveyor
+    $ quickci status buddy
+
+If the token for a specific service is not listed in ``~/.config/quickci/tokens.json``, it is possible to provide it using the ``--token <service_token>`` option::
+
+    $ quickci status travis --token <TravisCI token>
 
 Installation
 ------------

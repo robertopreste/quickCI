@@ -29,3 +29,9 @@ History
 ==================
 
 * Change fetching functions to asyncio.
+
+0.2.0 (WIP)
+-----------
+
+* Change ``config`` and ``status`` commands to group commands and add related subcommands.
+
