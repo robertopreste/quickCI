@@ -8,9 +8,7 @@ from quickci.classes import Config, TravisCI, CircleCI, AppVeyor, Buddy
 @click.group(invoke_without_command=True)
 @click.pass_context
 def status(ctx):
-    """
-    Return the status of the master branch of each project in each CI.
-    """
+    """Return the status of the master branch of each project in each CI."""
     ctx.obj = Config().parse()
     if ctx.invoked_subcommand is None:
         ctx.invoke(travis)
@@ -24,9 +22,7 @@ def status(ctx):
 @click.option("--token", "-t", help="Travis CI auth token", default=None)
 @click.pass_obj
 def travis(obj, token):
-    """
-    Return the status of the master branch of each project in Travis CI.
-    """
+    """Return the status of the master branch of each project in Travis CI."""
     if token:
         res = TravisCI(token=token)
     else:
@@ -41,9 +37,7 @@ def travis(obj, token):
 @click.option("--token", "-t", help="CircleCI auth token", default=None)
 @click.pass_obj
 def circle(obj, token):
-    """
-    Return the status of the master branch of each project in CircleCI.
-    """
+    """Return the status of the master branch of each project in CircleCI."""
     if token:
         res = CircleCI(token=token)
     else:
@@ -58,9 +52,7 @@ def circle(obj, token):
 @click.option("--token", "-t", help="AppVeyor auth token", default=None)
 @click.pass_obj
 def appveyor(obj, token):
-    """
-    Return the status of the master branch of each project in AppVeyor.
-    """
+    """Return the status of the master branch of each project in AppVeyor."""
     if token:
         res = AppVeyor(token=token)
     else:
@@ -75,9 +67,7 @@ def appveyor(obj, token):
 @click.option("--token", "-t", help="Buddy auth token", default=None)
 @click.pass_obj
 def buddy(obj, token):
-    """
-    Return the status of the master branch of each project in Buddy.
-    """
+    """Return the status of the master branch of each project in Buddy."""
     if token:
         res = Buddy(token=token)
     else:

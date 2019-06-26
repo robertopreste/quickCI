@@ -8,9 +8,7 @@ from quickci.classes import Config
 @click.group()
 @click.pass_context
 def config(ctx):
-    """
-    Create or update the configuration file.
-    """
+    """Create or update the configuration file."""
     ctx.obj = Config()
     pass
 
@@ -18,6 +16,7 @@ def config(ctx):
 @config.command(short_help="Show the config file.")
 @click.pass_obj
 def show(obj):
+    """Display the content of the configuration file."""
     click.echo(obj.show())
     return 0
 
@@ -25,6 +24,7 @@ def show(obj):
 @config.command(short_help="Create a new config file.")
 @click.pass_obj
 def create(obj):
+    """Create a new configuration file or overwrite an existing one."""
     if obj.check_file():
         click.echo(f"Configuration file already present in {obj.config_path}")
         if not click.confirm("Do you really want to overwrite it?",
@@ -44,6 +44,7 @@ def create(obj):
 @click.argument("token", type=str)
 @click.pass_obj
 def update(obj, service, token):
+    """Update a specific service token in the configuration file."""
     obj.update(service, token)
     obj.save()
     click.echo(f"Updated token for {service}.")

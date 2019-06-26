@@ -10,9 +10,7 @@ from quickci.commands.status import status
 @click.group()
 @click.version_option()
 def main():
-    """
-    Have a quick look at the status of CI projects from the command line.
-    """
+    """Have a quick look at the status of CI projects from the command line."""
     pass
 
 
