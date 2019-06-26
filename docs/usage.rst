@@ -26,10 +26,21 @@ If issued as ``quickci status``, will retrieve these information for all the CI 
     Travis CI
         project1 -> passed
         project2 -> passed
+    AppVeyor
+        project1 -> passed
+    Buddy
+        project2 -> enqueued
+
+It is also possible to check a specific service using subcommands of ``quickci status``::
+
+    $ quickci status travis
+    $ quickci status circle
+    $ quickci status appveyor
+    $ quickci status buddy
 
 If you have not set up a config file, you can still retrieve information from CI services providing their authentication token right into the command::
 
-    $ quickci status --travis <TRAVIS_CI_TOKEN> --circle <CIRCLE_CI_TOKEN> --appveyor <APPVEYOR_TOKEN> --buddy <BUDDY_TOKEN>
+    $ quickci status travis --token <TRAVIS_CI_TOKEN>
 
 
 ``quickci config``
@@ -37,11 +48,11 @@ If you have not set up a config file, you can still retrieve information from CI
 
 This command allows to create a config file for ``quickci``, or update it if a config file is already available.
 
-The ``--create`` option will create a brand new config file, located in ``~/.config/quickci/tokens.json``. If a config file is already present at that location, you will be prompted to confirm your desire to clear it and create a new one. New config files fill the authentication tokens with a temporary string, which you will need to update with proper tokens.
+The ``create`` command will create a brand new config file, located in ``~/.config/quickci/tokens.json``. If a config file is already present at that location, you will be prompted to confirm your desire to clear it and create a new one. New config files fill the authentication tokens with a temporary string, which you will need to update with proper tokens.
 
-The ``--update`` option allows to update one of the authentication tokens in the existing config file::
+The ``update`` command allows to update one of the authentication tokens in the existing config file::
 
-    $ quickci config --update TRAVISCI_TOKEN <new_token>
+    $ quickci config update <CIservice> <token>
 
-The ``--show`` option will show all the stored authentication tokens.
+The ``show`` command will show all the stored authentication tokens.
 

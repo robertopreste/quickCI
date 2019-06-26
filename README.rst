@@ -47,14 +47,14 @@ Have a quick look at the status of CI projects from the command line.
 Features
 --------
 
-Currently ``quickci`` supports checking build status for the following CI services:
+Currently, quickCI supports checking build status for the following CI services:
 
 * `Travis CI`_
 * CircleCI_
 * AppVeyor_
 * Buddy_
 
-TODO:
+WIP:
 
 * GitLab
 * CodeShip
