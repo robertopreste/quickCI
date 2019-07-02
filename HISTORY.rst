@@ -33,5 +33,7 @@ History
 0.2.0 (WIP)
 -----------
 
-* Change ``config`` and ``status`` commands to group commands and add related subcommands.
+* Change ``config`` and ``status`` commands to group commands and add related subcommands;
+* Change classes to use concurrent functions when possible;
+* Clean code.
 
