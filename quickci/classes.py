@@ -3,6 +3,8 @@
 # Created by Roberto Preste
 import asyncio
 import aiohttp
+import click
+from concurrent.futures import ThreadPoolExecutor
 import pprint
 import json
 import os
@@ -10,35 +12,21 @@ import requests
 from typing import List, Tuple, Dict, Any
 
 
-async def get_async(host: str,
-                    headers: Dict[str, Any],
-                    reponame: str) -> Tuple[str, Dict[str, Any]]:
-    """Async request call.
+class CIService:
+    """Base class for any CI service.
 
-    :param str host: url to request
+    Each specific class below will need to be instantiated with an
+    authentication token (explicitly provided) and a base url for the
+    given CI service (internally provided by that specific class).
 
-    :param Dict[str,Any] headers: request headers to use
+    :param str token: authentication token
 
-    :param str reponame: identifier returned as first element of the tuple
-
-    :return: Tuple[str,Dict[str,Any]
-    """
-    async with aiohttp.ClientSession() as session:
-        async with session.get(host, headers=headers) as resp:
-            response = await resp.json()
-            return reponame, response
-
-
-class TravisCI:
-    """
-    Class used to get and manipulate data from the TravisCI platform.
-
-    :param str token: authentication token provided by Travis CI
+    :param str url: base url for API requests
     """
 
-    def __init__(self, token: str):
-        self.token = token
-        self._url = "https://api.travis-ci.com"
+    def __init__(self, token: str, url: str):
+        self._token = token
+        self._url = url
 
     @property
     def colours(self) -> Dict[str, str]:
@@ -46,8 +34,34 @@ class TravisCI:
 
         :return: Dict[str,str]
         """
-        return {"passed": "green", "failed": "red", "errored": "red",
-                "started": "yellow"}
+        return {"passed": "green", "success": "green", "SUCCESSFUL": "green",
+                "failed": "red", "errored": "red", "FAILED": "red",
+                "started": "yellow", "running": "yellow",
+                "INPROGRESS": "yellow", "ENQUEUED": "yellow"}
+
+    @staticmethod
+    async def aget(host: str,
+                   headers: Dict[str, Any]) -> Dict[str, Any]:
+        """Generic asynchronous request call.
+
+        :param str host: url to request
+
+        :param Dict[str,Any] headers: request headers to use
+
+        :return: Dict[str,Any]
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.get(host, headers=headers) as response:
+                data = await response.json()
+                return data
+
+
+class TravisCI(CIService):
+    """Class used to get and manipulate data from the TravisCI platform."""
+
+    def __init__(self, token: str):
+        url = "https://api.travis-ci.com"
+        super().__init__(token, url)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -57,67 +71,62 @@ class TravisCI:
         """
         return {"Travis-API-Version": "3",
                 "User-Agent": "CI-Board",
-                "Authorization": f"token {self.token}"}
+                "Authorization": f"token {self._token}"}
 
-    def user_info(self) -> Dict[str, Any]:
-        """Return user information from the API.
+    @property
+    def login(self) -> str:
+        """Return login information from the API.
 
-        :return: Dict[str,Any]
+        :return: str
         """
-        q = requests.get(f"{self._url}/user", headers=self.headers)
-        return q.json()
+        response = requests.get(f"{self._url}/user", headers=self.headers)
+        data = response.json()
+        return data.get("login", "")
 
-    def builds(self) -> Dict[str, Any]:
-        """Return builds information from the API.
-
-        :return: Dict[str,Any]
-        """
-        q = requests.get(f"{self._url}/builds", headers=self.headers)
-        return q.json()
-
-    def repos_ids(self) -> List[Tuple[str, str]]:
+    def projects(self) -> List[Tuple[str, str]]:
         """Return name and id for each repo available.
 
         :return: List[Tuple[str,str]]
         """
-        login = self.user_info().get("login")
-        q = requests.get(f"{self._url}/owner/{login}/repos?repository.active=True",
-                         headers=self.headers)
-        return [(el["name"], el["id"]) for el in q.json().get("repositories")]
+        url = f"{self._url}/owner/{self.login}/repos?repository.active=True"
+        response = requests.get(url, headers=self.headers)
+        data = response.json()
+        return [(el["name"], el["id"]) for el in data.get("repositories")]
 
-    def status(self) -> List[Tuple[str, str]]:
-        """Return name and build status for each repo available (master
-        branch only).
+    async def astatus(self, repo: Tuple[str, str]):
+        """Print name and build status for the given repo (master branch only).
 
-        :return: List[Tuple[str,str]]
+        :param Tuple[str,str] repo: repo tuple as returned by self.repositories()
+
+        :return:
         """
+        url = f"{self._url}/repo/{repo[1]}/builds?branch.name=master&sort_by=id:desc"
+        status = await self.aget(url, headers=self.headers)
+        repo_name = repo[0]
+        repo_stat = status.get("builds")[0].get("state")
+        click.secho(f"\t{repo_name} -> {repo_stat}", fg=self.colours[repo_stat])
+        return
+
+    def status(self):
+        """Perform the async call to retrieve repo status for each repo
+        available in self.repos_ids().
+
+        :return:
+        """
+        projs = self.projects()
         loop = asyncio.get_event_loop()
-        tasks = [get_async(f"{self._url}/repo/{el[1]}/builds?branch.name=master&sort_by=id:desc",
-                           headers=self.headers, reponame=el[0])
-                 for el in self.repos_ids()]
-        res = loop.run_until_complete(asyncio.gather(*tasks))
-
-        return [(el[0], el[1].get("builds")[0].get("state")) for el in res]
+        tasks = [self.astatus(el) for el in projs]
+        loop.run_until_complete(asyncio.gather(*tasks))
+        return
 
 
-class CircleCI:
+class CircleCI(CIService):
     """
-    Class used to get and manipulate data from the CircleCI platform.
-
-    :param str token: authentication token provided by CircleCI
-    """
+    Class used to get and manipulate data from the CircleCI platform."""
 
     def __init__(self, token: str):
-        self.token = token
-        self._url = "https://circleci.com/api/v1.1"
-
-    @property
-    def colours(self) -> Dict[str, str]:
-        """Return colours indicating build status.
-
-        :return: Dict[str,str]
-        """
-        return {"success": "green", "running": "yellow", "failed": "red"}
+        url = "https://circleci.com/api/v1.1"
+        super().__init__(token, url)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -125,55 +134,51 @@ class CircleCI:
 
         :return: Dict[str,str]
         """
-        return {"circle-token": self.token}
-
-    def user_info(self) -> Dict[str, Any]:
-        """Return user information from the API.
-
-        :return: Dict[str,Any]
-        """
-        q = requests.get(f"{self._url}/me?", headers=self.headers)
-        return q.json()
+        return {"circle-token": self._token}
 
     def projects(self) -> List[Dict[str, Any]]:
         """Return projects information from the API.
 
         :return: List[Dict[str,Any]]
         """
-        q = requests.get(f"{self._url}/projects?", headers=self.headers)
-        return q.json()
+        response = requests.get(f"{self._url}/projects?", headers=self.headers)
+        return response.json()
 
-    def status(self) -> List[Tuple[str, str]]:
+    def astatus(self, repo: Dict[str, Any]):
+        """Print name and build status for the given repo (master branch only).
+
+        :param Dict[str,Any] repo: repo dict as returned by self.projects()
+
+        :return:
+        """
+        repo_name = repo.get("reponame")
+        repo_stat = (repo.get("branches").get("master").get("latest_workflows")
+                     .get("workflow").get("status"))
+        click.secho(f"\t{repo_name} -> {repo_stat}", fg=self.colours[repo_stat])
+        return
+
+    def status(self):
         """Return name and build status for each project available
         (master branch only).
 
         :return: List[Tuple[str,str]]
         """
-        resp = self.projects()
-        return [(repo.get("reponame"),
-                 (repo.get("branches").get("master").get("latest_workflows")
-                  .get("workflow").get("status")))
-                for repo in resp]
+        projs = self.projects()
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor()
+        tasks = [loop.run_in_executor(executor, self.astatus, repo)
+                 for repo in projs]
+        asyncio.gather(*tasks)
+        return
 
 
-class AppVeyor:
+class AppVeyor(CIService):
     """
-    Class used to get and manipulate data from the AppVeyor platform.
-
-    :param str token: authentication token provided by AppVeyor
-    """
+    Class used to get and manipulate data from the AppVeyor platform."""
 
     def __init__(self, token: str):
-        self.token = token
-        self._url = "https://ci.appveyor.com/api"
-
-    @property
-    def colours(self) -> Dict[str, str]:
-        """Return colours indicating build status.
-
-        :return: Dict[str,str]
-        """
-        return {"success": "green", "running": "yellow", "failed": "red"}
+        url = "https://ci.appveyor.com/api"
+        super().__init__(token, url)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -181,7 +186,7 @@ class AppVeyor:
 
         :return: Dict[str,str]
         """
-        return {"Authorization": f"Bearer {self.token}",
+        return {"Authorization": f"Bearer {self._token}",
                 "Content-Type": "application/json"}
 
     def projects(self) -> List[Dict[str, Any]]:
@@ -189,36 +194,45 @@ class AppVeyor:
 
         :return: List[Dict[str,Any]]
         """
-        q = requests.get(f"{self._url}/projects", headers=self.headers)
-        return q.json()
+        response = requests.get(f"{self._url}/projects", headers=self.headers)
+        return response.json()
 
-    def status(self) -> List[Tuple[str, str]]:
-        """Return name and build status for each project available
-        (master branch only).
+    async def astatus(self, repo: str, account: str):
+        """Print name and build status for the given repo (master branch only).
 
-        :return: List[Tuple[str,str]]
+        :param str repo: repository name
+
+        :param str account: account name
+
+        :return:
         """
-        resp = self.projects()
-        account = resp[0].get("accountName")
+        url = f"{self._url}/projects/{account}/{repo}/branch/master"
+        status = await self.aget(url, headers=self.headers)
+        repo_stat = status.get("build").get("status")
+        click.secho(f"\t{repo} -> {repo_stat}", fg=self.colours[repo_stat])
+        return
+
+    def status(self):
+        """Perform the async call to retrieve repo status for each repo
+        available in self.projects() for the current account.
+
+        :return:
+        """
+        projs = self.projects()
+        account = projs[0].get("accountName")
         loop = asyncio.get_event_loop()
-        tasks = [get_async(f"{self._url}/projects/{account}/{el.get('slug')}/branch/master",
-                           headers=self.headers, reponame=el.get("slug"))
-                 for el in resp]
-        res = loop.run_until_complete(asyncio.gather(*tasks))
-
-        return [(el[0], el[1].get("build").get("status")) for el in res]
+        tasks = [self.astatus(el.get("slug"), account) for el in projs]
+        loop.run_until_complete(asyncio.gather(*tasks))
+        return
 
 
-class Buddy:
+class Buddy(CIService):
     """
-    Class used to get and manipulate data from the Buddy platform.
-
-    :param token: authentication token provided by Buddy
-    """
+    Class used to get and manipulate data from the Buddy platform."""
 
     def __init__(self, token: str):
-        self.token = token
-        self._url = "https://api.buddy.works"
+        url = "https://api.buddy.works"
+        super().__init__(token, url)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -226,26 +240,17 @@ class Buddy:
 
         :return: Dict[str,str]
         """
-        return {"Authorization": f"Bearer {self.token}"}
+        return {"Authorization": f"Bearer {self._token}"}
 
-    @property
-    def colours(self) -> Dict[str, str]:
-        """Return colours indicating build status.
-
-        :return: Dict[str,str]
-        """
-        return {"SUCCESSFUL": "green", "INPROGRESS": "yellow", "FAILED": "red",
-                "ENQUEUED": "yellow"}
-
-    def workspaces(self) -> List[Tuple[str, str]]:
+    def workspaces(self) -> List[str]:
         """Return user's workspaces from the API.
 
-        :return: List[Tuple[str,str]]
+        :return: List[str]
         """
-        q = requests.get(f"{self._url}/workspaces", headers=self.headers)
-        wspaces = q.json()
+        response = requests.get(f"{self._url}/workspaces", headers=self.headers)
+        wspaces = response.json()
 
-        return [(el["domain"], el["url"]) for el in wspaces.get("workspaces")]
+        return [el["url"] for el in wspaces.get("workspaces")]
 
     def projects(self) -> List[Tuple[str, str]]:
         """Return user's projects for each workspace from the API.
@@ -254,41 +259,35 @@ class Buddy:
         """
         wspaces = self.workspaces()
         loop = asyncio.get_event_loop()
-        tasks = [get_async(f"{tup[1]}/projects",
-                           headers=self.headers,
-                           reponame=tup[0]) for tup in wspaces]
-        res = loop.run_until_complete(asyncio.gather(*tasks))
+        tasks = [self.aget(f"{ws}/projects", headers=self.headers)
+                 for ws in wspaces]
+        projs = loop.run_until_complete(asyncio.gather(*tasks))
 
         return [(el.get("name"), el.get("url"))
-                for ws in list(zip(*res))[1] for el in ws["projects"]]
+                for proj in projs for el in proj.get("projects")]
 
-        # for tup in wspaces:
-        #     r = requests.get(f"{tup[1]}/projects", headers=self.headers)
-        #     for el in r.json().get("projects"):
-        #         projs.append((el["name"], el["url"]))
+    async def astatus(self, repo: Tuple[str, Any]):
+        status = await self.aget(f"{repo[1]}/pipelines", headers=self.headers)
+        repo_name = repo[0]
+        pipes = status.get("pipelines")
+        repo_stat = [(el.get("name"), el.get("last_execution_status"))
+                     for el in pipes]
+        for el in repo_stat:
+            pipe, stat = el
+            click.secho(f"\t{repo_name} ({pipe} pipeline) -> {stat.casefold()}",
+                        fg=self.colours[stat])
+        return
 
-    def status(self) -> List[Tuple[str, str, str]]:
+    def status(self):
         """Return project name, pipeline name and status from the API.
 
         :return: List[Tuple[str,str,str]]
         """
         projs = self.projects()
         loop = asyncio.get_event_loop()
-        tasks = [get_async(f"{tup[1]}/pipelines",
-                           headers=self.headers,
-                           reponame=tup[0]) for tup in projs]
-        res = loop.run_until_complete(asyncio.gather(*tasks))
-
-        return [(pr[0], el.get("name"), el.get("last_execution_status"))
-                for pr in res for el in pr[1].get("pipelines")]
-
-        # st = []
-        # for el in projs:
-        #     r = requests.get(f"{el[1]}/pipelines", headers=self.headers)
-        #     for pip in r.json().get("pipelines"):
-        #         st.append((el[0], pip["name"], pip["last_execution_status"]))
-        #
-        # return st
+        tasks = [self.astatus(repo) for repo in projs]
+        loop.run_until_complete(asyncio.gather(*tasks))
+        return
 
 
 class GitLab:
@@ -358,20 +357,17 @@ class Codeship:
 
 
 class Config:
-    """
-    Class that controls the config file used to store and retrieve tokens.
-    """
+    """Class that controls the config file used to store and retrieve tokens."""
+
     DEFAULT_CONFIG = """
 {
     "TRAVISCI_TOKEN": "replace_me", 
     "CIRCLECI_TOKEN": "replace_me", 
     "APPVEYOR_TOKEN": "replace_me", 
-    "BUDDY_TOKEN": "replace_me",
-    "CODESHIP_TOKEN": "replace_me", 
-    "GITLABCI_TOKEN": "replace_me",
-    "GITLABCI_USER": "replace_me"
+    "BUDDY_TOKEN": "replace_me"
 }
 """
+
     SERVICES = {"travis": "TRAVISCI_TOKEN",
                 "circle": "CIRCLECI_TOKEN",
                 "appveyor": "APPVEYOR_TOKEN",
@@ -386,13 +382,18 @@ class Config:
     def config_path(self):
         return os.path.join(self._config_dir, self._config_file)
 
-    def parse(self):
+    def parse(self) -> Dict[str, str]:
+        """Parse and return the existing config dict or return the
+        default one otherwise.
+
+        :return: Dict[str,str]
+        """
         try:
             with open(self.config_path) as f:
-                res = json.loads(f.read())
+                conf = json.loads(f.read())
         except FileNotFoundError:
-            res = json.loads(self.DEFAULT_CONFIG)
-        return res
+            conf = json.loads(self.DEFAULT_CONFIG)
+        return conf
 
     @property
     def content(self):
@@ -403,32 +404,28 @@ class Config:
         self._content = value
 
     def check_dir(self) -> bool:
-        """
-        Check whether the config dir exists or not.
+        """Check whether the config dir exists or not.
 
         :return: bool
         """
         return os.path.isdir(self._config_dir)
 
     def check_file(self) -> bool:
-        """
-        Check whether the config file exists or not.
+        """Check whether the config file exists or not.
 
         :return: bool
         """
         return os.path.isfile(self.config_path)
 
-    def create(self) -> bool:
+    def create(self):
         """Create the config file in the default config dir.
 
-        :return: bool
+        :return:
         """
         if not self.check_dir():
             os.makedirs(self._config_dir)
         with open(self.config_path, "w") as f:
             f.write(self.DEFAULT_CONFIG)
-
-        return True
 
     def update(self, service: str, token: str):
         """Update a given service token with a new one.
@@ -441,15 +438,13 @@ class Config:
         """
         self.content[self.SERVICES[service]] = token
 
-    def save(self) -> bool:
+    def save(self):
         """Write the updated config to the default path.
 
-        :return: bool
+        :return:
         """
         with open(self.config_path, "w") as f:
             f.write(json.dumps(self.content))
-
-        return True
 
     def show(self):
         """Return a screen-friendly representation of the config.
@@ -459,4 +454,4 @@ class Config:
         return pprint.pprint(self.content)
 
     def __getitem__(self, item):
-        return self.content[item]
+        return self.content[self.SERVICES[item]]
