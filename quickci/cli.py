@@ -3,8 +3,8 @@
 # Created by Roberto Preste
 import sys
 import click
-from quickci.commands.config import config
-from quickci.commands.status import status
+from .commands.config import config
+from .commands.status import status
 
 
 @click.group()

@@ -30,10 +30,14 @@ History
 
 * Change fetching functions to asyncio.
 
-0.2.0 (WIP)
------------
+0.2.0 (2019-07-02)
+------------------
 
 * Change ``config`` and ``status`` commands to group commands and add related subcommands;
 * Change classes to use concurrent functions when possible;
 * Clean code.
 
+0.2.1 (2019-07-03)
+==================
+
+* Fix imports and tox test config.
