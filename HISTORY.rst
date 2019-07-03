@@ -41,3 +41,9 @@ History
 ==================
 
 * Fix imports and tox test config.
+
+0.2.2 (2019-07-03)
+==================
+
+* Fix setup.py installation process;
+* Update documentation.

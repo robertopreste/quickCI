@@ -14,6 +14,9 @@ quickCI
         :target: https://quickci.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+.. image:: https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg
+   :target: https://saythanks.io/to/robertopreste
+
 
 Have a quick look at the status of CI projects from the command line.
 
