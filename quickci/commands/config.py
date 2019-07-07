@@ -17,6 +17,10 @@ def config(ctx):
 @click.pass_obj
 def show(obj):
     """Display the content of the configuration file."""
+    if obj.temporary:
+        click.secho("This is a temporary config file. Please create a "
+                    "proper config file using `quickci config create`.",
+                    fg="red")
     click.echo(obj.show())
     return 0
 

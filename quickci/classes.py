@@ -12,7 +12,7 @@ import requests
 from typing import List, Tuple, Dict, Any
 
 
-class CIService:
+class _CIService:
     """Base class for any CI service.
 
     Each specific class below will need to be instantiated with an
@@ -56,10 +56,10 @@ class CIService:
                 return data
 
 
-class TravisCI(CIService):
+class TravisCI(_CIService):
     """Class used to get and manipulate data from the TravisCI platform."""
 
-    def __init__(self, token: str):
+    def __init__(self, token: str = "replace_me"):
         url = "https://api.travis-ci.com"
         super().__init__(token, url)
 
@@ -113,6 +113,11 @@ class TravisCI(CIService):
 
         :return:
         """
+        if self._token == "replace_me":
+            click.secho("Please replace the default token with a valid one "
+                        "using `quickci config update`, or provide one "
+                        "directly using `--token`.", fg="red")
+            return
         projs = self.projects()
         loop = asyncio.get_event_loop()
         tasks = [self.astatus(el) for el in projs]
@@ -120,11 +125,11 @@ class TravisCI(CIService):
         return
 
 
-class CircleCI(CIService):
+class CircleCI(_CIService):
     """
     Class used to get and manipulate data from the CircleCI platform."""
 
-    def __init__(self, token: str):
+    def __init__(self, token: str = "replace_me"):
         url = "https://circleci.com/api/v1.1"
         super().__init__(token, url)
 
@@ -163,6 +168,11 @@ class CircleCI(CIService):
 
         :return: List[Tuple[str,str]]
         """
+        if self._token == "replace_me":
+            click.secho("Please replace the default token with a valid one "
+                        "using `quickci config update`, or provide one "
+                        "directly using `--token`.", fg="red")
+            return
         projs = self.projects()
         loop = asyncio.get_event_loop()
         executor = ThreadPoolExecutor()
@@ -172,11 +182,11 @@ class CircleCI(CIService):
         return
 
 
-class AppVeyor(CIService):
+class AppVeyor(_CIService):
     """
     Class used to get and manipulate data from the AppVeyor platform."""
 
-    def __init__(self, token: str):
+    def __init__(self, token: str = "replace_me"):
         url = "https://ci.appveyor.com/api"
         super().__init__(token, url)
 
@@ -218,6 +228,11 @@ class AppVeyor(CIService):
 
         :return:
         """
+        if self._token == "replace_me":
+            click.secho("Please replace the default token with a valid one "
+                        "using `quickci config update`, or provide one "
+                        "directly using `--token`.", fg="red")
+            return
         projs = self.projects()
         account = projs[0].get("accountName")
         loop = asyncio.get_event_loop()
@@ -226,11 +241,11 @@ class AppVeyor(CIService):
         return
 
 
-class Buddy(CIService):
+class Buddy(_CIService):
     """
     Class used to get and manipulate data from the Buddy platform."""
 
-    def __init__(self, token: str):
+    def __init__(self, token: str = "replace_me"):
         url = "https://api.buddy.works"
         super().__init__(token, url)
 
@@ -283,6 +298,11 @@ class Buddy(CIService):
 
         :return: List[Tuple[str,str,str]]
         """
+        if self._token == "replace_me":
+            click.secho("Please replace the default token with a valid one "
+                        "using `quickci config update`, or provide one "
+                        "directly using `--token`.", fg="red")
+            return
         projs = self.projects()
         loop = asyncio.get_event_loop()
         tasks = [self.astatus(repo) for repo in projs]
@@ -374,6 +394,7 @@ class Config:
                 "buddy": "BUDDY_TOKEN"}
 
     def __init__(self):
+        self._temporary = False
         self._config_dir = os.path.expanduser("~/.config/quickci")
         self._config_file = "tokens.json"
         self._content = self.parse()
@@ -393,6 +414,7 @@ class Config:
                 conf = json.loads(f.read())
         except FileNotFoundError:
             conf = json.loads(self.DEFAULT_CONFIG)
+            self._temporary = True
         return conf
 
     @property
@@ -402,6 +424,10 @@ class Config:
     @content.setter
     def content(self, value):
         self._content = value
+
+    @property
+    def temporary(self):
+        return self._temporary
 
     def check_dir(self) -> bool:
         """Check whether the config dir exists or not.
@@ -426,6 +452,7 @@ class Config:
             os.makedirs(self._config_dir)
         with open(self.config_path, "w") as f:
             f.write(self.DEFAULT_CONFIG)
+        self._temporary = False
 
     def update(self, service: str, token: str):
         """Update a given service token with a new one.
