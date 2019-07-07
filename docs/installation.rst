@@ -6,7 +6,7 @@ Installation
 Stable release
 --------------
 
-To install quickCI, run this command in your terminal:
+To install quickCI, run this command in your terminal (**Python>=3.6 only**):
 
 .. code-block:: console
 

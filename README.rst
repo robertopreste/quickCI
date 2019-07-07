@@ -10,6 +10,9 @@ quickCI
     :alt: Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.
     :target: https://www.repostatus.org/#wip
 
+.. image:: https://travis-ci.com/robertopreste/quickCI.svg?branch=master
+    :target: https://travis-ci.com/robertopreste/quickCI
+
 .. image:: https://readthedocs.org/projects/quickci/badge/?version=latest
         :target: https://quickci.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
@@ -85,7 +88,7 @@ If the token for a specific service is not listed in ``~/.config/quickci/tokens.
 Installation
 ------------
 
-``quickci`` can be installed using pip::
+quickCI can be installed using pip (**Python>=3.6 only**)::
 
     $ pip install quickci
 
