@@ -13,6 +13,10 @@ quickCI
 .. image:: https://travis-ci.com/robertopreste/quickCI.svg?branch=master
     :target: https://travis-ci.com/robertopreste/quickCI
 
+..image:: https://cloud.drone.io/api/badges/robertopreste/quickCI/status.svg
+    :alt: Build Status
+    :target: https://cloud.drone.io/robertopreste/quickCI
+
 .. image:: https://readthedocs.org/projects/quickci/badge/?version=latest
         :target: https://quickci.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
