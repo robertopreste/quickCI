@@ -42,6 +42,7 @@ Currently, quickCI supports checking build status for the following CI services:
 * CircleCI_
 * AppVeyor_
 * Buddy_
+* Drone_
 
 More services to come!
 
@@ -64,6 +65,7 @@ Available services are:
     * CircleCI: ``circle``
     * AppVeyor: ``appveyor``
     * Buddy: ``buddy``
+    * Drone: ``drone``
 
 3. Check that everything is correct::
 
@@ -76,7 +78,7 @@ Check the build status of your projects::
 
     $ quickci status
 
-The build status of your Travis CI, CircleCI, AppVeyor and Buddy projects will be returned (currently only master branch).
+The build status of your Travis CI, CircleCI, AppVeyor, Buddy and Drone projects will be returned (currently only master branch).
 
 It is also possible to check a specific service using subcommands of ``quickci status``::
 
@@ -84,6 +86,7 @@ It is also possible to check a specific service using subcommands of ``quickci s
     $ quickci status circle
     $ quickci status appveyor
     $ quickci status buddy
+    $ quickci status drone
 
 If the token for a specific service is not listed in ``~/.config/quickci/tokens.json``, it is possible to provide it using the ``--token <service_token>`` option::
 
@@ -108,3 +111,4 @@ This package was created with Cookiecutter_ and the `cc-pypackage`_ project temp
 .. _CircleCI: https://circleci.com/
 .. _AppVeyor: https://www.appveyor.com/
 .. _Buddy: https://buddy.works
+.. _Drone: https://drone.io
