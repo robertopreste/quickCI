@@ -1,0 +1,58 @@
+kind: pipeline
+name: python-3-6-amd64
+
+platform:
+  arch: amd64
+
+steps:
+- name: test
+  image: python:3.6
+  commands:
+  - pip install -r requirements_dev.txt
+  - pip install -e .
+  - pytest
+
+---
+kind: pipeline
+name: python-3-7-amd64
+
+platform:
+  arch: amd64
+
+steps:
+- name: test
+  image: python:3.7
+  commands:
+  - pip install -r requirements_dev.txt
+  - pip install -e .
+  - pytest
+
+---
+kind: pipeline
+name: python-3-6-arm64
+
+platform:
+  arch: arm64
+
+steps:
+- name: test
+  image: python:3.6
+  commands:
+  - pip install -r requirements_dev.txt
+  - pip install -e .
+  - pytest
+
+---
+kind: pipeline
+name: python-3-7-arm64
+
+platform:
+  arch: arm64
+
+steps:
+- name: test
+  image: python:3.7
+  commands:
+  - pip install -r requirements_dev.txt
+  - pip install -e .
+  - pytest
