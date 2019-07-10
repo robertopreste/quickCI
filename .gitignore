@@ -118,6 +118,7 @@ venv.bak/
 .idea/misc.xml
 .idea/modules.xml
 .idea/vcs.xml
+.idea/quickci.iml
 
 # User-specific stuff
 .idea/**/workspace.xml
