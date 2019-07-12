@@ -3,7 +3,7 @@
 # Created by Roberto Preste
 import pytest
 from quickci.classes import Config
-from quickci.classes import TravisCI, CircleCI, AppVeyor, Buddy
+from quickci.classes import TravisCI, CircleCI, AppVeyor, Buddy, DroneCI
 
 
 def test_config_temporary():
@@ -13,15 +13,11 @@ def test_config_temporary():
         assert not config.temporary
     else:
         assert config.temporary
-
-
-def test_config_content():
-    """Test the content attribute of the Config class with temporary tokens."""
-    config = Config()
-    expect = {"TRAVISCI_TOKEN": "replace_me", "CIRCLECI_TOKEN": "replace_me",
-              "APPVEYOR_TOKEN": "replace_me", "BUDDY_TOKEN": "replace_me"}
-    result = config.content
-    assert result == expect
+        expect = {"TRAVISCI_TOKEN": "replace_me", "CIRCLECI_TOKEN": "replace_me",
+                  "APPVEYOR_TOKEN": "replace_me", "BUDDY_TOKEN": "replace_me",
+                  "DRONE_TOKEN": "replace_me"}
+        result = config.content
+        assert result == expect
 
 
 def test_status_travis(capsys):
@@ -64,5 +60,16 @@ def test_status_buddy(capsys):
               "`quickci config update`, or provide one directly "
               "using `--token`.")
     b.status()
+    result = capsys.readouterr()
+    assert result.out.strip() == expect
+
+
+def test_status_drone(capsys):
+    """Test the Drone.status() function with temporary token."""
+    d = DroneCI()
+    expect = ("Please replace the default token with a valid one using " 
+              "`quickci config update`, or provide one directly "
+              "using `--token`.")
+    d.status()
     result = capsys.readouterr()
     assert result.out.strip() == expect

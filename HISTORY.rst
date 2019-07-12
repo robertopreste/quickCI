@@ -47,3 +47,9 @@ History
 
 * Fix setup.py installation process;
 * Update documentation.
+
+0.2.3 (WIP)
+===========
+
+* Add Drone CI class and CLI commands;
+* Update tests.

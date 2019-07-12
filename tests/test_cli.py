@@ -51,6 +51,7 @@ def test_cli_config_show():
     assert "BUDDY_TOKEN" in result.output
     assert "CIRCLECI_TOKEN" in result.output
     assert "TRAVISCI_TOKEN" in result.output
+    assert "DRONE_TOKEN" in result.output
 
 
 def test_cli_status():
@@ -62,6 +63,7 @@ def test_cli_status():
     assert "CircleCI" in result.output
     assert "AppVeyor" in result.output
     assert "Buddy" in result.output
+    assert "Drone" in result.output
 
 
 def test_cli_status_help():
@@ -73,6 +75,7 @@ def test_cli_status_help():
     assert "buddy" in result.output
     assert "circle" in result.output
     assert "travis" in result.output
+    assert "drone" in result.output
     assert "Show this message and exit." in result.output
 
 
@@ -106,3 +109,11 @@ def test_cli_status_buddy():
     result = runner.invoke(cli.main, ["status", "buddy"])
     assert result.exit_code == 0
     assert "Buddy" in result.output
+
+
+def test_cli_status_drone():
+    """Test the status drone command."""
+    runner = CliRunner()
+    result = runner.invoke(cli.main, ["status", "drone"])
+    assert result.exit_code == 0
+    assert "Drone CI" in result.output

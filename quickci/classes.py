@@ -126,8 +126,7 @@ class TravisCI(_CIService):
 
 
 class CircleCI(_CIService):
-    """
-    Class used to get and manipulate data from the CircleCI platform."""
+    """Class used to get and manipulate data from the CircleCI platform."""
 
     def __init__(self, token: str = "replace_me"):
         url = "https://circleci.com/api/v1.1"
@@ -183,8 +182,7 @@ class CircleCI(_CIService):
 
 
 class AppVeyor(_CIService):
-    """
-    Class used to get and manipulate data from the AppVeyor platform."""
+    """Class used to get and manipulate data from the AppVeyor platform."""
 
     def __init__(self, token: str = "replace_me"):
         url = "https://ci.appveyor.com/api"
@@ -242,8 +240,7 @@ class AppVeyor(_CIService):
 
 
 class Buddy(_CIService):
-    """
-    Class used to get and manipulate data from the Buddy platform."""
+    """Class used to get and manipulate data from the Buddy platform."""
 
     def __init__(self, token: str = "replace_me"):
         url = "https://api.buddy.works"
@@ -282,6 +279,12 @@ class Buddy(_CIService):
                 for proj in projs for el in proj.get("projects")]
 
     async def astatus(self, repo: Tuple[str, Any]):
+        """Print name and build status for the given repo (master branch only).
+
+        :param Tuple[str,Any] repo: repo tuple as returned by self.projects()
+
+        :return:
+        """
         status = await self.aget(f"{repo[1]}/pipelines", headers=self.headers)
         repo_name = repo[0]
         pipes = status.get("pipelines")
@@ -294,9 +297,71 @@ class Buddy(_CIService):
         return
 
     def status(self):
-        """Return project name, pipeline name and status from the API.
+        """Perform the async call to retrieve repo status for each repo
+        available in self.projects() for the current account.
 
-        :return: List[Tuple[str,str,str]]
+        :return:
+        """
+        if self._token == "replace_me":
+            click.secho("Please replace the default token with a valid one "
+                        "using `quickci config update`, or provide one "
+                        "directly using `--token`.", fg="red")
+            return
+        projs = self.projects()
+        loop = asyncio.get_event_loop()
+        tasks = [self.astatus(repo) for repo in projs]
+        loop.run_until_complete(asyncio.gather(*tasks))
+        return
+
+
+class DroneCI(_CIService):
+    """Class used to get and manipulate data from the Drone CI platform."""
+
+    def __init__(self, token: str = "replace_me"):
+        url = "https://cloud.drone.io/api"
+        super().__init__(token, url)
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Return headers used to connect to the API.
+
+        :return: Dict[str,str]
+        """
+        return {"Authorization": f"Bearer {self._token}"}
+
+    def projects(self) -> List[Tuple[str, str, int]]:
+        """Return user's projects from the API.
+
+        :return: List[Tuple[str,str,int]]
+        """
+        response = requests.get(f"{self._url}/user/repos",
+                                headers=self.headers)
+        repos = response.json()
+        actives = filter(lambda d: d["active"] is True, repos)
+        # projs = [(el["name"], el["namespace"], el["counter"])
+        projs = [(el["name"], el["slug"], el["counter"])
+                 for el in actives]
+        return projs
+
+    async def astatus(self, repo: Tuple[str, str, int]):
+        """Print name and build status for the given repo (latest build only).
+
+        :param Tuple[str,str,int] repo: repo tuple as returned by self.projects()
+
+        :return:
+        """
+        status = await self.aget(f"{self._url}/repos/{repo[1]}/builds/{repo[2]}",
+                                 headers=self.headers)
+        repo_name = repo[0]
+        repo_stat = status.get("status")
+        click.secho(f"\t{repo_name} -> {repo_stat}", fg=self.colours[repo_stat])
+        return
+
+    def status(self):
+        """Perform the async call to retrieve repo status for each repo
+        available in self.projects() for the current account.
+
+        :return:
         """
         if self._token == "replace_me":
             click.secho("Please replace the default token with a valid one "
@@ -384,14 +449,16 @@ class Config:
     "TRAVISCI_TOKEN": "replace_me", 
     "CIRCLECI_TOKEN": "replace_me", 
     "APPVEYOR_TOKEN": "replace_me", 
-    "BUDDY_TOKEN": "replace_me"
+    "BUDDY_TOKEN": "replace_me", 
+    "DRONE_TOKEN": "replace_me"
 }
 """
 
     SERVICES = {"travis": "TRAVISCI_TOKEN",
                 "circle": "CIRCLECI_TOKEN",
                 "appveyor": "APPVEYOR_TOKEN",
-                "buddy": "BUDDY_TOKEN"}
+                "buddy": "BUDDY_TOKEN",
+                "drone": "DRONE_TOKEN"}
 
     def __init__(self):
         self._temporary = False
