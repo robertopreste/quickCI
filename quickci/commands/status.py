@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 # Created by Roberto Preste
 import click
-from quickci.classes import Config, TravisCI, CircleCI, AppVeyor, Buddy
+from quickci.classes import Config, TravisCI, CircleCI, AppVeyor, Buddy, DroneCI
 
 
 @click.group(invoke_without_command=True)
@@ -16,6 +16,7 @@ def status(ctx):
         ctx.invoke(circle)
         ctx.invoke(appveyor)
         ctx.invoke(buddy)
+        ctx.invoke(drone)
     pass
 
 
@@ -79,5 +80,16 @@ def buddy(obj, token):
     #     return 1
     ci = Buddy(token=token) if token else Buddy(token=obj["buddy"])
     click.secho("Buddy", bold=True, fg="blue")
+    ci.status()
+    return 0
+
+
+@status.command(short_help="Show status of Drone CI projects.")
+@click.option("--token", "-t", help="Drone CI auth token", default=None)
+@click.pass_obj
+def drone(obj, token):
+    """Return the status of the latest build of each project in Drone CI."""
+    ci = DroneCI(token=token) if token else DroneCI(token=obj["drone"])
+    click.secho("Drone CI", bold=True, fg="blue")
     ci.status()
     return 0

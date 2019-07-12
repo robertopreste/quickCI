@@ -30,7 +30,7 @@ Have a quick look at the status of CI projects from the command line.
 
 
 Features
---------
+========
 
 Currently, quickCI supports checking build status for the following CI services:
 
@@ -38,14 +38,15 @@ Currently, quickCI supports checking build status for the following CI services:
 * CircleCI_
 * AppVeyor_
 * Buddy_
+* Drone_
 
 More services to come!
 
 Usage
------
+=====
 
 Configuration
-=============
+-------------
 
 1. Create a config file (it will be located in ``~/.config/quickci/tokens.json``::
 
@@ -60,19 +61,20 @@ Available services are:
     * CircleCI: ``circle``
     * AppVeyor: ``appveyor``
     * Buddy: ``buddy``
+    * Drone: ``drone``
 
 3. Check that everything is correct::
 
     $ quickci config show
 
 Check build status
-==================
+------------------
 
 Check the build status of your projects::
 
     $ quickci status
 
-The build status of your Travis CI, CircleCI, AppVeyor and Buddy projects will be returned (currently only master branch).
+The build status of your Travis CI, CircleCI, AppVeyor, Buddy and Drone projects will be returned (currently only master branch).
 
 It is also possible to check a specific service using subcommands of ``quickci status``::
 
@@ -80,21 +82,25 @@ It is also possible to check a specific service using subcommands of ``quickci s
     $ quickci status circle
     $ quickci status appveyor
     $ quickci status buddy
+    $ quickci status drone
 
 If the token for a specific service is not listed in ``~/.config/quickci/tokens.json``, it is possible to provide it using the ``--token <service_token>`` option::
 
     $ quickci status travis --token <TravisCI token>
 
+Please refer to the Usage_ section of the documentation for further information.
+
 Installation
-------------
+============
 
 quickCI can be installed using pip (**Python>=3.6 only**)::
 
     $ pip install quickci
 
+Please refer to the Installation_ section of the documentation for further information.
 
 Credits
--------
+=======
 
 This package was created with Cookiecutter_ and the `cc-pypackage`_ project template.
 
@@ -104,3 +110,6 @@ This package was created with Cookiecutter_ and the `cc-pypackage`_ project temp
 .. _CircleCI: https://circleci.com/
 .. _AppVeyor: https://www.appveyor.com/
 .. _Buddy: https://buddy.works
+.. _Drone: https://drone.io
+.. _Usage: https://quickci.readthedocs.io/en/latest/usage.html
+.. _Installation: https://quickci.readthedocs.io/en/latest/installation.html

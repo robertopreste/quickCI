@@ -3,7 +3,7 @@ Usage
 =====
 
 Command Line Interface
-----------------------
+======================
 
 ``quickci`` offers two main CLI commands:
 
@@ -12,7 +12,7 @@ Command Line Interface
 
 
 ``quickci status``
-==================
+------------------
 
 This command retrieves the status of the master branch of your projects on one or more CI services.
 
@@ -21,7 +21,7 @@ If issued as ``quickci status``, will retrieve these information for all the CI 
     $ quickci status
 
     CircleCI
-        project1 -> passed
+        project1 -> success
         project2 -> failed
     Travis CI
         project1 -> passed
@@ -30,6 +30,8 @@ If issued as ``quickci status``, will retrieve these information for all the CI 
         project1 -> passed
     Buddy
         project2 -> enqueued
+    Drone CI
+        project1 -> success
 
 It is also possible to check a specific service using subcommands of ``quickci status``::
 
@@ -37,6 +39,7 @@ It is also possible to check a specific service using subcommands of ``quickci s
     $ quickci status circle
     $ quickci status appveyor
     $ quickci status buddy
+    $ quickci status drone
 
 If you have not set up a config file, you can still retrieve information from CI services providing their authentication token right into the command::
 
@@ -44,7 +47,7 @@ If you have not set up a config file, you can still retrieve information from CI
 
 
 ``quickci config``
-==================
+------------------
 
 This command allows to create a config file for ``quickci``, or update it if a config file is already available.
 
