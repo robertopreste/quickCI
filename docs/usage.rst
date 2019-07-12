@@ -3,7 +3,7 @@ Usage
 =====
 
 Command Line Interface
-----------------------
+======================
 
 ``quickci`` offers two main CLI commands:
 
@@ -12,7 +12,7 @@ Command Line Interface
 
 
 ``quickci status``
-==================
+------------------
 
 This command retrieves the status of the master branch of your projects on one or more CI services.
 
@@ -47,7 +47,7 @@ If you have not set up a config file, you can still retrieve information from CI
 
 
 ``quickci config``
-==================
+------------------
 
 This command allows to create a config file for ``quickci``, or update it if a config file is already available.
 
