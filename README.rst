@@ -32,6 +32,7 @@ Have a quick look at the status of CI projects from the command line.
 Features
 ========
 
+quickCI allows to have a quick overview of the status of build jobs on several CI services, for a specific branch of the repository being built.
 Currently, quickCI supports checking build status for the following CI services:
 
 * `Travis CI`_
@@ -48,7 +49,7 @@ Usage
 Configuration
 -------------
 
-1. Create a config file (it will be located in ``~/.config/quickci/tokens.json``::
+1. Create a config file (it will be located in ``~/.config/quickci/tokens.json``)::
 
     $ quickci config create
 
@@ -74,8 +75,12 @@ Check the build status of your projects::
 
     $ quickci status
 
-The build status of your Travis CI, CircleCI, AppVeyor, Buddy and Drone projects will be returned (currently only master branch).
+The build status of your Travis CI, CircleCI, AppVeyor, Buddy and Drone projects will be returned (``master`` branch).
+If you want to monitor one specific branch of your repositories (suppose you have many repos with a dedicated ``dev`` branch for development), you can easily add the ``--branch <branch_name>`` option::
 
+    $ quickci status --branch dev
+
+If the ``--branch`` option is not provided, the build status of the ``master`` branch will be retrieved by default.
 It is also possible to check a specific service using subcommands of ``quickci status``::
 
     $ quickci status travis
@@ -84,6 +89,7 @@ It is also possible to check a specific service using subcommands of ``quickci s
     $ quickci status buddy
     $ quickci status drone
 
+These subcommands also accept the ``--branch`` option.
 If the token for a specific service is not listed in ``~/.config/quickci/tokens.json``, it is possible to provide it using the ``--token <service_token>`` option::
 
     $ quickci status travis --token <TravisCI token>
