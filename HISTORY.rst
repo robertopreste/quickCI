@@ -54,3 +54,9 @@ History
 * Add Drone CI class and CLI commands;
 * Update tests;
 * Update documentation.
+
+0.3.0 (2019-07-28)
+==================
+
+* Add ``--branch`` option to check for specific branch;
+* Update documentation.
