@@ -10,7 +10,7 @@ Table of contents
    readme
    installation
    usage
-   modules
+   api
    contributing
    authors
    history
