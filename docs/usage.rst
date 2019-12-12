@@ -38,6 +38,13 @@ If you want to monitor one specific branch of your repositories (suppose you hav
     $ quickci status --branch dev
 
 If the ``--branch`` option is not provided, the build status of the ``master`` branch will be retrieved by default.
+
+If you want to check one specific repository, you can provide the ``--repo <reponame>`` option::
+
+    $ quickci status --repo my_repo
+
+It is obviously possible to combine the ``--repo`` and ``--branch`` options to check a given branch of a specific repository.
+
 It is also possible to check a specific service using subcommands of ``quickci status``::
 
     $ quickci status travis
@@ -46,11 +53,11 @@ It is also possible to check a specific service using subcommands of ``quickci s
     $ quickci status buddy
     $ quickci status drone
 
-These subcommands also accept the ``--branch`` option::
+These subcommands also accept the ``--branch`` and ``--repo`` options::
 
     $ quickci status travis --branch master
-    $ quickci status circle --branch feature1
-    $ quickci status drone --branch new_feature
+    $ quickci status circle --branch feature1 --repo my_repo
+    $ quickci status drone --branch new_feature --repo my_other_repo
 
 If you have not set up a config file, you can still retrieve information from CI services providing their authentication token right into the command::
 
