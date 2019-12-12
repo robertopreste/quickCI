@@ -9,7 +9,7 @@ import pprint
 import json
 import os
 import requests
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 
 
 class _CIService:
@@ -23,14 +23,20 @@ class _CIService:
         _token: Authentication token.
         _url: Base url for API requests.
         _branch: Branch to check (default: master).
+        _repo: Repository to check (default: None).
         _found: Whether the given branch has at least one build
             (default: False).
     """
 
-    def __init__(self, token: str, url: str, branch: str):
+    def __init__(self,
+                 token: str,
+                 url: str,
+                 branch: str,
+                 repo: Optional[str]):
         self._token = token
         self._url = url
         self._branch = branch
+        self._repo = repo
         self._found = False
 
     @property
@@ -66,9 +72,12 @@ class _CIService:
 class TravisCI(_CIService):
     """Class used to get and manipulate data from the TravisCI platform."""
 
-    def __init__(self, token: str = "replace_me", branch: str = "master"):
+    def __init__(self,
+                 token: str = "replace_me",
+                 branch: str = "master",
+                 repo: Optional[str] = None):
         url = "https://api.travis-ci.com"
-        super().__init__(token, url, branch)
+        super().__init__(token, url, branch, repo)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -132,7 +141,10 @@ class TravisCI(_CIService):
             return
         projs = self.projects()
         loop = asyncio.get_event_loop()
-        tasks = [self.astatus(el) for el in projs]
+        if self._repo:
+            tasks = [self.astatus(el) for el in projs if el[0] == self._repo]
+        else:
+            tasks = [self.astatus(el) for el in projs]
         loop.run_until_complete(asyncio.gather(*tasks))
         if self._found is False:
             click.secho("\tNo build found.", fg="magenta")
@@ -142,9 +154,12 @@ class TravisCI(_CIService):
 class CircleCI(_CIService):
     """Class used to get and manipulate data from the CircleCI platform."""
 
-    def __init__(self, token: str = "replace_me", branch: str = "master"):
+    def __init__(self,
+                 token: str = "replace_me",
+                 branch: str = "master",
+                 repo: Optional[str] = None):
         url = "https://circleci.com/api/v1.1"
-        super().__init__(token, url, branch)
+        super().__init__(token, url, branch, repo)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -191,8 +206,12 @@ class CircleCI(_CIService):
         projs = self.projects()
         loop = asyncio.get_event_loop()
         executor = ThreadPoolExecutor()
-        tasks = [loop.run_in_executor(executor, self.astatus, repo)
-                 for repo in projs]
+        if self._repo:
+            tasks = [loop.run_in_executor(executor, self.astatus, repo)
+                     for repo in projs if repo.get("reponame") == self._repo]
+        else:
+            tasks = [loop.run_in_executor(executor, self.astatus, repo)
+                     for repo in projs]
         asyncio.gather(*tasks)
         if self._found is False:
             click.secho("\tNo build found.", fg="magenta")
@@ -202,9 +221,12 @@ class CircleCI(_CIService):
 class AppVeyor(_CIService):
     """Class used to get and manipulate data from the AppVeyor platform."""
 
-    def __init__(self, token: str = "replace_me", branch: str = "master"):
+    def __init__(self,
+                 token: str = "replace_me",
+                 branch: str = "master",
+                 repo: Optional[str] = None):
         url = "https://ci.appveyor.com/api"
-        super().__init__(token, url, branch)
+        super().__init__(token, url, branch, repo)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -253,9 +275,17 @@ class AppVeyor(_CIService):
                         "directly using `--token`.", fg="red")
             return
         projs = self.projects()
-        account = projs[0].get("accountName")
+        try:
+            account = projs[0].get("accountName")
+        except IndexError:  # no projects in AppVeyor
+            click.secho("\tNo projects found.", fg="magenta")
+            return
         loop = asyncio.get_event_loop()
-        tasks = [self.astatus(el.get("slug"), account) for el in projs]
+        if self._repo:
+            tasks = [self.astatus(el.get("slug"), account)
+                     for el in projs if el.get("slug") == self._repo]
+        else:
+            tasks = [self.astatus(el.get("slug"), account) for el in projs]
         loop.run_until_complete(asyncio.gather(*tasks))
         if self._found is False:
             click.secho("\tNo build found.", fg="magenta")
@@ -265,9 +295,12 @@ class AppVeyor(_CIService):
 class Buddy(_CIService):
     """Class used to get and manipulate data from the Buddy platform."""
 
-    def __init__(self, token: str = "replace_me", branch: str = "master"):
+    def __init__(self,
+                 token: str = "replace_me",
+                 branch: str = "master",
+                 repo: Optional[str] = None):
         url = "https://api.buddy.works"
-        super().__init__(token, url, branch)
+        super().__init__(token, url, branch, repo)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -342,7 +375,11 @@ class Buddy(_CIService):
             return
         projs = self.projects()
         loop = asyncio.get_event_loop()
-        tasks = [self.astatus(repo) for repo in projs]
+        if self._repo:
+            tasks = [self.astatus(repo)
+                     for repo in projs if repo == self._repo]
+        else:
+            tasks = [self.astatus(repo) for repo in projs]
         loop.run_until_complete(asyncio.gather(*tasks))
         if self._found is False:
             click.secho("\tNo build found.", fg="magenta")
@@ -352,9 +389,12 @@ class Buddy(_CIService):
 class DroneCI(_CIService):
     """Class used to get and manipulate data from the Drone CI platform."""
 
-    def __init__(self, token: str = "replace_me", branch: str = "master"):
+    def __init__(self,
+                 token: str = "replace_me",
+                 branch: str = "master",
+                 repo: Optional[str] = None):
         url = "https://cloud.drone.io/api"
-        super().__init__(token, url, branch)
+        super().__init__(token, url, branch, repo)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -415,7 +455,11 @@ class DroneCI(_CIService):
             return
         projs = self.projects()
         loop = asyncio.get_event_loop()
-        tasks = [self.astatus(repo) for repo in projs]
+        if self._repo:
+            tasks = [self.astatus(repo)
+                     for repo in projs if repo == self._repo]
+        else:
+            tasks = [self.astatus(repo) for repo in projs]
         loop.run_until_complete(asyncio.gather(*tasks))
         if self._found is False:
             click.secho("\tNo build found.", fg="magenta")
@@ -493,10 +537,10 @@ class Config:
 
     DEFAULT_CONFIG = """
 {
-    "TRAVISCI_TOKEN": "replace_me", 
-    "CIRCLECI_TOKEN": "replace_me", 
-    "APPVEYOR_TOKEN": "replace_me", 
-    "BUDDY_TOKEN": "replace_me", 
+    "TRAVISCI_TOKEN": "replace_me",
+    "CIRCLECI_TOKEN": "replace_me",
+    "APPVEYOR_TOKEN": "replace_me",
+    "BUDDY_TOKEN": "replace_me",
     "DRONE_TOKEN": "replace_me"
 }
 """
