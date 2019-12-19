@@ -60,3 +60,9 @@ History
 
 * Add ``--branch`` option to check for specific branch;
 * Update documentation.
+
+0.4.0 (2019-12-12)
+==================
+
+* Add ``--repo`` option to check for a specific repository;
+* Update repository.

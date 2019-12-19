@@ -7,28 +7,30 @@ from quickci.classes import Config, TravisCI, CircleCI, AppVeyor, Buddy, DroneCI
 
 @click.group(invoke_without_command=True)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_context
-def status(ctx, branch):
+def status(ctx, branch, repo):
     """Return the status of the given branch of each project in each CI."""
     ctx.obj = Config()
 
     if ctx.invoked_subcommand is None:
-        ctx.invoke(travis, branch=branch)
-        ctx.invoke(circle, branch=branch)
-        ctx.invoke(appveyor, branch=branch)
-        ctx.invoke(buddy, branch=branch)
-        ctx.invoke(drone, branch=branch)
+        ctx.invoke(travis, branch=branch, repo=repo)
+        ctx.invoke(circle, branch=branch, repo=repo)
+        ctx.invoke(appveyor, branch=branch, repo=repo)
+        ctx.invoke(buddy, branch=branch, repo=repo)
+        ctx.invoke(drone, branch=branch, repo=repo)
     pass
 
 
 @status.command(short_help="Show status of Travis CI projects.")
 @click.option("--token", "-t", help="Travis CI auth token", default=None)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_obj
-def travis(obj, token, branch):
+def travis(obj, token, branch, repo):
     """Return the status of the given branch of each project in Travis CI."""
-    ci = TravisCI(token=token, branch=branch) \
-        if token else TravisCI(token=obj["travis"], branch=branch)
+    ci = TravisCI(token=token, branch=branch, repo=repo) \
+        if token else TravisCI(token=obj["travis"], branch=branch, repo=repo)
     click.secho(f"Travis CI ({branch} branch)", bold=True, fg="blue")
     ci.status()
     return 0
@@ -37,11 +39,12 @@ def travis(obj, token, branch):
 @status.command(short_help="Show status of CircleCI projects.")
 @click.option("--token", "-t", help="CircleCI auth token", default=None)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_obj
-def circle(obj, token, branch):
+def circle(obj, token, branch, repo):
     """Return the status of the given branch of each project in CircleCI."""
-    ci = CircleCI(token=token, branch=branch) \
-        if token else CircleCI(token=obj["circle"], branch=branch)
+    ci = CircleCI(token=token, branch=branch, repo=repo) \
+        if token else CircleCI(token=obj["circle"], branch=branch, repo=repo)
     click.secho(f"CircleCI ({branch} branch)", bold=True, fg="blue")
     ci.status()
     return 0
@@ -50,11 +53,12 @@ def circle(obj, token, branch):
 @status.command(short_help="Show status of AppVeyor projects.")
 @click.option("--token", "-t", help="AppVeyor auth token", default=None)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_obj
-def appveyor(obj, token, branch):
+def appveyor(obj, token, branch, repo):
     """Return the status of the given branch of each project in AppVeyor."""
-    ci = AppVeyor(token=token, branch=branch) \
-        if token else AppVeyor(token=obj["appveyor"], branch=branch)
+    ci = AppVeyor(token=token, branch=branch, repo=repo) \
+        if token else AppVeyor(token=obj["appveyor"], branch=branch, repo=repo)
     click.secho(f"AppVeyor ({branch} branch)", bold=True, fg="blue")
     ci.status()
     return 0
@@ -63,11 +67,12 @@ def appveyor(obj, token, branch):
 @status.command(short_help="Show status of Buddy projects.")
 @click.option("--token", "-t", help="Buddy auth token", default=None)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_obj
-def buddy(obj, token, branch):
+def buddy(obj, token, branch, repo):
     """Return the status of the given branch of each project in Buddy."""
-    ci = Buddy(token=token, branch=branch) \
-        if token else Buddy(token=obj["buddy"], branch=branch)
+    ci = Buddy(token=token, branch=branch, repo=repo) \
+        if token else Buddy(token=obj["buddy"], branch=branch, repo=repo)
     click.secho(f"Buddy ({branch} branch)", bold=True, fg="blue")
     ci.status()
     return 0
@@ -76,11 +81,12 @@ def buddy(obj, token, branch):
 @status.command(short_help="Show status of Drone CI projects.")
 @click.option("--token", "-t", help="Drone CI auth token", default=None)
 @click.option("--branch", "-b", help="Branch to check", default="master")
+@click.option("--repo", "-r", help="Repo to check", default=None)
 @click.pass_obj
-def drone(obj, token, branch):
+def drone(obj, token, branch, repo):
     """Return the status of the given branch of each project in Drone CI."""
-    ci = DroneCI(token=token, branch=branch) \
-        if token else DroneCI(token=obj["drone"], branch=branch)
+    ci = DroneCI(token=token, branch=branch, repo=repo) \
+        if token else DroneCI(token=obj["drone"], branch=branch, repo=repo)
     click.secho(f"Drone CI ({branch} branch)", bold=True, fg="blue")
     ci.status()
     return 0
