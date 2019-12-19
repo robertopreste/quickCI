@@ -65,4 +65,4 @@ History
 ==================
 
 * Add ``--repo`` option to check for a specific repository;
-* Update repository.
+* Update documentation.
